@@ -42,7 +42,7 @@ MandelbrotFractalGeneration/
 ---
 ## Пример использования 
 
-<img width="804" height="797" alt="image" src="https://github.com/user-attachments/assets/479d47ba-b928-45db-a5fd-eca1a2271b01" />
+<img width="993" height="994" alt="image" src="https://github.com/user-attachments/assets/86984615-04a2-4439-ac60-f22d39b9bd41" />
 
 ---
 
