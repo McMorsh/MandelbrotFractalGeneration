@@ -40,6 +40,11 @@ MandelbrotFractalGeneration/
 - Сохранение изображения в PNG/JPEG.
   
 ---
+## Пример использования 
+
+<img width="1776" height="1076" alt="image" src="https://github.com/user-attachments/assets/0361f046-7a42-4a5d-9a9c-1c6e063b2ee2" />
+
+---
 
 ## Установка
 
