@@ -1,0 +1,23 @@
+# Папка сборки
+/build/
+# Временные файлы CMake
+CMakeCache.txt
+CMakeFiles/
+# Текущая сборка/Makefile
+Makefile
+cmake_install.cmake
+# Исполняемые и объектные файлы
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+# IDE и система
+*.vcxproj*
+.vscode/
+.idea/
+*.user
+# Системные файлы
+.DS_Store
+Thumbs.db
