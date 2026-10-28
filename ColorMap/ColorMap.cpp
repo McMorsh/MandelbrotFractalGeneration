@@ -4,21 +4,65 @@
 #include <cmath>
 #include <cstddef>
 
-ColorMap::ColorMap() {
-    // Цвета идут от тёмного фона к яркой границе множества.
-    // Крайние цвета тёмные, поэтому при зацикливании нет резкого шва.
-    colors = {
-        {  5,   3,  20, 255},
-        { 25,  15,  70, 255},
-        { 80,  35, 140, 255},
-        {160,  50, 150, 255},
-        {235, 100, 100, 255},
-        {255, 180,  80, 255},
-        {255, 245, 210, 255},
-        {180,  60, 140, 255},
-        {100,  40, 150, 255},
-        { 40,  25, 100, 255},
+namespace {
+using Palette = std::vector<Color>;
+
+// Замкнутые палитры: последний цвет близок к первому,
+// поэтому при зацикливании нет видимого шва.
+const std::vector<Palette>& palettes() {
+    static const std::vector<Palette> list = {
+        {
+            {  5,   3,  20, 255},
+            { 25,  15,  70, 255},
+            { 80,  35, 140, 255},
+            {160,  50, 150, 255},
+            {235, 100, 100, 255},
+            {255, 180,  80, 255},
+            {255, 245, 210, 255},
+            {180,  60, 140, 255},
+            {100,  40, 150, 255},
+            { 40,  25, 100, 255},
+        },
+        {
+            {  2,   6,  20, 255},
+            {  4,  26,  64, 255},
+            {  8,  70, 120, 255},
+            { 16, 130, 170, 255},
+            { 45, 190, 200, 255},
+            {140, 235, 235, 255},
+            {235, 255, 250, 255},
+            {120, 210, 230, 255},
+            { 45, 130, 190, 255},
+            { 10,  55, 115, 255},
+        },
+        {
+            { 12,  12,  16, 255},
+            { 35,  35,  42, 255},
+            { 70,  70,  80, 255},
+            {115, 115, 125, 255},
+            {165, 165, 175, 255},
+            {215, 215, 225, 255},
+            {255, 255, 255, 255},
+            {190, 190, 200, 255},
+            {120, 120, 130, 255},
+            { 50,  50,  58, 255},
+        },
     };
+    return list;
+}
+
+const char* const kPaletteNames[] = {"Ember", "Ocean", "Mono"};
+}
+
+ColorMap::ColorMap() : colors(palettes().front()) {}
+
+void ColorMap::nextPalette() {
+    paletteIndex = (paletteIndex + 1) % palettes().size();
+    colors = palettes()[paletteIndex];
+}
+
+const char* ColorMap::paletteName() const {
+    return kPaletteNames[paletteIndex];
 }
 
 Color ColorMap::lerp(Color from, Color to, float t) {
@@ -31,7 +75,8 @@ Color ColorMap::lerp(Color from, Color to, float t) {
 }
 
 Color ColorMap::getColor(double iter, int maxIter) const {
-    if (maxIter <= 0 || iter >= static_cast<double>(maxIter)) return BLACK;
+    if (colors.empty() || maxIter <= 0) return BLACK;
+    if (iter >= static_cast<double>(maxIter)) return BLACK;
 
     // С ростом maxIter цикл удлиняется, иначе на глубоком зуме
     // цветовые полосы становятся слишком частыми.

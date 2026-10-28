@@ -4,14 +4,16 @@
 #include <iterator>
 
 namespace {
-constexpr int kTopBarHeight = 74;
-constexpr int kPanelWidth = 320;
+constexpr int kTopBarHeight = 96;
+constexpr int kPanelWidth = 330;
 constexpr int kPanelPadding = 16;
 constexpr int kLineHeight = 20;
 
 constexpr const char* kHelpLines[] = {
     "Mouse wheel     zoom in / out",
     "Left drag       pan",
+    "[ / ]           iterations - / +",
+    "P               next palette",
     "R               reset view",
     "F12             save PNG",
     "H               toggle help",
@@ -57,7 +59,8 @@ void FractalRender::draw(const std::vector<double>& data, const ColorMap& colorm
     UpdateTexture(texture, image.data);
 }
 
-void FractalRender::display(const std::string& info, bool showHelp) const {
+void FractalRender::display(const std::string& info, const std::string& details,
+                            bool showHelp) const {
     BeginDrawing();
     ClearBackground(BLACK);
     DrawTexture(texture, 0, 0, WHITE);
@@ -66,6 +69,7 @@ void FractalRender::display(const std::string& info, bool showHelp) const {
     DrawRectangle(0, 0, width, kTopBarHeight, Fade(BLACK, 0.55f));
     DrawText("MANDELBROT FRACTAL", 24, 14, 24, RAYWHITE);
     DrawText(info.c_str(), 24, 46, 16, Fade(RAYWHITE, 0.72f));
+    DrawText(details.c_str(), 24, 68, 16, Fade(RAYWHITE, 0.55f));
 
     const char* fps = TextFormat("%d FPS", GetFPS());
     const int fpsWidth = MeasureText(fps, 16);

@@ -1,6 +1,7 @@
 #ifndef MANDELBROT_FRACTAL_RENDER_H
 #define MANDELBROT_FRACTAL_RENDER_H
 
+#pragma once
 #include "ColorMap.h"
 #include <string>
 #include <vector>
@@ -9,13 +10,13 @@
 class FractalRender {
 private:
     int width, height;
-    Image image{};
-    Texture2D texture{};
+    Image image;
+    Texture2D texture;
 public:
     FractalRender(int width, int height, const char* title);
     ~FractalRender();
 
-    // Копирование запрещено: деструктор освобождает общие ресурсы raylib
+    // Texture2D и Image не освобождаются автоматически при копировании
     FractalRender(const FractalRender&) = delete;
     FractalRender& operator=(const FractalRender&) = delete;
 
@@ -23,8 +24,8 @@ public:
     // maxIter задаёт порог принадлежности множеству.
     void draw(const std::vector<double>& data, const ColorMap& colormap, int maxIter);
 
-    // Выводит текстуру и строку состояния; showHelp включает подсказки.
-    void display(const std::string& info, bool showHelp) const;
+    // Выводит текстуру, две строки состояния и подсказки при showHelp.
+    void display(const std::string& info, const std::string& details, bool showHelp) const;
 
     // Сохраняет изображение без интерфейса.
     bool saveImage(const std::string& path) const;

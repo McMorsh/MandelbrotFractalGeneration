@@ -5,6 +5,7 @@
 #include <raylib.h>
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdio>
 #include <ctime>
@@ -23,6 +24,12 @@ constexpr double kInitialSpan = 3.5;
 constexpr double kMinSpan = 1e-11;
 constexpr double kMaxSpan = 8.0;
 
+constexpr int kIterationStep = 100;
+constexpr int kMinIterations = 50;
+constexpr int kMaxIterations = 5000;
+constexpr int kMinIterationBonus = -2000;
+constexpr int kMaxIterationBonus = 3000;
+
 // Чем сильнее приближение, тем больше итераций нужно для проработки деталей
 int iterationsForSpan(double span) {
     const double zoom = kInitialSpan / span;
@@ -30,11 +37,28 @@ int iterationsForSpan(double span) {
     return static_cast<int>(std::clamp(iterations, 150.0, 3000.0));
 }
 
+int iterationsForView(double span, int bonus) {
+    return std::clamp(iterationsForSpan(span) + bonus, kMinIterations, kMaxIterations);
+}
+
+struct ComplexPoint {
+    double real;
+    double imag;
+};
+
 // View хранит окно комплексной плоскости, которое видно на экране
 struct View {
     double centerX = kInitialCenterX;
     double centerY = kInitialCenterY;
     double span = kInitialSpan;
+
+    ComplexPoint pointAt(Vector2 mouse) const {
+        const double scale = span / kWindowWidth;
+        return {
+            centerX + (mouse.x - kWindowWidth * 0.5) * scale,
+            centerY - (mouse.y - kWindowHeight * 0.5) * scale
+        };
+    }
 
     // Приближение колесом мыши: точка под курсором остается на месте.
     // Возвращает false, если масштаб уже уперся в предел и не изменился.
@@ -42,16 +66,11 @@ struct View {
         const double newSpan = std::clamp(span * factor, kMinSpan, kMaxSpan);
         if (newSpan == span) return false;
 
-        const double oldScale = span / kWindowWidth;
         const double newScale = newSpan / kWindowWidth;
+        const ComplexPoint anchor = pointAt(mouse);
 
-        const double offsetX = (mouse.x - kWindowWidth * 0.5) * oldScale;
-        const double offsetY = (mouse.y - kWindowHeight * 0.5) * oldScale;
-        const double anchorX = centerX + offsetX;
-        const double anchorY = centerY - offsetY;
-
-        centerX = anchorX - (mouse.x - kWindowWidth * 0.5) * newScale;
-        centerY = anchorY + (mouse.y - kWindowHeight * 0.5) * newScale;
+        centerX = anchor.real - (mouse.x - kWindowWidth * 0.5) * newScale;
+        centerY = anchor.imag + (mouse.y - kWindowHeight * 0.5) * newScale;
         span = newSpan;
         return true;
     }
@@ -78,11 +97,19 @@ std::string screenshotPath() {
     return buffer;
 }
 
-std::string makeInfo(const View& view, int maxIter) {
+std::string makeInfo(const View& view, int maxIter, const char* palette, double renderMs) {
     char buffer[256];
     std::snprintf(buffer, sizeof(buffer),
-                  "zoom %.3gx   |   iterations %d   |   center (%.15g, %+.15gi)",
-                  kInitialSpan / view.span, maxIter, view.centerX, view.centerY);
+                  "zoom %.3gx   |   iterations %d   |   %s   |   render %.1f ms",
+                  kInitialSpan / view.span, maxIter, palette, renderMs);
+    return buffer;
+}
+
+std::string makeDetails(const View& view, const ComplexPoint& cursor) {
+    char buffer[256];
+    std::snprintf(buffer, sizeof(buffer),
+                  "center (%.15g, %+.15gi)   |   cursor (%.15g, %+.15gi)",
+                  view.centerX, view.centerY, cursor.real, cursor.imag);
     return buffer;
 }
 } // namespace
@@ -93,9 +120,13 @@ int main() {
     View view;
 
     bool showHelp = true;
-    bool dirty = true;
+    bool needsRender = true;
+    bool needsRecolor = false;
+    int iterationBonus = 0;
     int maxIter = 0;
+    double renderMs = 0.0;
 
+    std::vector<double> data;
     std::string notice;
     double noticeTime = 0.0;
 
@@ -104,33 +135,59 @@ int main() {
             const Vector2 delta = GetMouseDelta();
             if (delta.x != 0.0f || delta.y != 0.0f) {
                 view.panBy(delta);
-                dirty = true;
+                needsRender = true;
             }
         }
 
         const float wheel = GetMouseWheelMove();
         if (wheel != 0.0f) {
             const double factor = std::pow(1.2, -static_cast<double>(wheel));
-            dirty = view.zoomAt(factor, GetMousePosition()) || dirty;
+            needsRender = view.zoomAt(factor, GetMousePosition()) || needsRender;
+        }
+
+        if (IsKeyPressed(KEY_LEFT_BRACKET)) {
+            iterationBonus = std::clamp(iterationBonus - kIterationStep,
+                                        kMinIterationBonus, kMaxIterationBonus);
+            needsRender = true;
+        }
+        if (IsKeyPressed(KEY_RIGHT_BRACKET)) {
+            iterationBonus = std::clamp(iterationBonus + kIterationStep,
+                                        kMinIterationBonus, kMaxIterationBonus);
+            needsRender = true;
+        }
+
+        if (IsKeyPressed(KEY_P)) {
+            colormap.nextPalette();
+            needsRecolor = true;
         }
 
         if (IsKeyPressed(KEY_R)) {
             view = View{};
-            dirty = true;
+            iterationBonus = 0;
+            needsRender = true;
         }
 
         if (IsKeyPressed(KEY_H)) {
             showHelp = !showHelp;
         }
 
-        // Пересчитываем фрактал только при изменении вида
-        if (dirty) {
-            maxIter = iterationsForSpan(view.span);
-            const Fractal fractal(maxIter);
-            const std::vector<double> data = fractal.generate(
-                kWindowWidth, kWindowHeight, view.centerX, view.centerY, view.span);
+        // Пересчитываем фрактал только при изменении вида,
+        // а при смене палитры перекрашиваем готовую карту итераций
+        if (needsRender || needsRecolor) {
+            const auto start = std::chrono::steady_clock::now();
+
+            if (needsRender) {
+                maxIter = iterationsForView(view.span, iterationBonus);
+                const Fractal fractal(maxIter);
+                data = fractal.generate(
+                    kWindowWidth, kWindowHeight, view.centerX, view.centerY, view.span);
+                needsRender = false;
+            }
+
             renderer.draw(data, colormap, maxIter);
-            dirty = false;
+            needsRecolor = false;
+            renderMs = std::chrono::duration<double, std::milli>(
+                std::chrono::steady_clock::now() - start).count();
         }
 
         // Сохраняем уже пересчитанный кадр, а не предыдущий
@@ -140,11 +197,13 @@ int main() {
             noticeTime = GetTime();
         }
 
-        std::string info = makeInfo(view, maxIter);
+        const ComplexPoint cursor = view.pointAt(GetMousePosition());
+        std::string info = makeInfo(view, maxIter, colormap.paletteName(), renderMs);
+        std::string details = makeDetails(view, cursor);
         if (!notice.empty() && GetTime() - noticeTime < 3.0) {
-            info += "   |   " + notice;
+            details += "   |   " + notice;
         }
-        renderer.display(info, showHelp);
+        renderer.display(info, details, showHelp);
     }
 
     return 0;
