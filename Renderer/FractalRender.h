@@ -1,27 +1,33 @@
-#ifndef FARKTALGENERATION_FRACTALRENDER_H
-#define FARKTALGENERATION_FRACTALRENDER_H
-
+#ifndef MANDELBROT_FRACTAL_RENDER_H
+#define MANDELBROT_FRACTAL_RENDER_H
 
 #include "ColorMap.h"
+#include <string>
 #include <vector>
 
-// Класс FractalRender отвечает за визуализацию фрактала с использованием raylib
+// Окно raylib, текстура с фракталом и экранный интерфейс.
 class FractalRender {
 private:
-    int width, height;      // размеры окна и изображения
-    Image image;            // изображение raylib, на котором будут рисоваться пиксели
-    Texture2D texture;      // текстура для отображения изображения в окне
+    int width, height;
+    Image image{};
+    Texture2D texture{};
 public:
-    // Конструктор класса
-    FractalRender(int width, int height);
-    // Метод отрисовки фрактала
-    // data - массив чисел итераций для каждого пикселя
-    // colormap - объект палитры цветов для преобразования итераций в цвета
-    // max_iter - максимальное количество итераций для нормализации цвета
-    void draw(const std::vector<int>& data, ColorMap& colormap, int max_iter);
-    // Метод отображения изображения в окне
-    void display();
+    FractalRender(int width, int height, const char* title);
+    ~FractalRender();
+
+    // Копирование запрещено: деструктор освобождает общие ресурсы raylib
+    FractalRender(const FractalRender&) = delete;
+    FractalRender& operator=(const FractalRender&) = delete;
+
+    // Переносит карту итераций в изображение и обновляет текстуру.
+    // maxIter задаёт порог принадлежности множеству.
+    void draw(const std::vector<double>& data, const ColorMap& colormap, int maxIter);
+
+    // Выводит текстуру и строку состояния; showHelp включает подсказки.
+    void display(const std::string& info, bool showHelp) const;
+
+    // Сохраняет изображение без интерфейса.
+    bool saveImage(const std::string& path) const;
 };
 
-
-#endif //FARKTALGENERATION_FRACTALRENDER_H
+#endif //MANDELBROT_FRACTAL_RENDER_H

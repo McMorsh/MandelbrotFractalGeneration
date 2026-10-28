@@ -1,44 +1,94 @@
 #include "FractalRender.h"
 
-// Конструктор класса
-// Создает окно raylib, настраивает FPS, инициализирует пустое изображение и текстуру
-FractalRender::FractalRender(int width, int height)
-    : width(width), height(height){
+#include <cstddef>
+#include <iterator>
 
-    InitWindow(width, height, "Mandelbrot Fractal (raylib)");
+namespace {
+constexpr int kTopBarHeight = 74;
+constexpr int kPanelWidth = 320;
+constexpr int kPanelPadding = 16;
+constexpr int kLineHeight = 20;
+
+constexpr const char* kHelpLines[] = {
+    "Mouse wheel     zoom in / out",
+    "Left drag       pan",
+    "R               reset view",
+    "F12             save PNG",
+    "H               toggle help",
+    "Esc             quit",
+};
+
+constexpr int kPanelHeight =
+    kPanelPadding * 2 + 28 + static_cast<int>(std::size(kHelpLines)) * kLineHeight;
+} // namespace
+
+FractalRender::FractalRender(int width, int height, const char* title)
+    : width(width), height(height) {
+
+    InitWindow(width, height, title);
     SetTargetFPS(60);
 
-    // Создаем пустое изображение нужного размера, закрашенное черным
     image = GenImageColor(width, height, BLACK);
-    // Загружаем текстуру из изображения для последующего отображения
     texture = LoadTextureFromImage(image);
+    // Без сглаживания пиксели фрактала остаются чёткими
+    SetTextureFilter(texture, TEXTURE_FILTER_POINT);
 }
 
-// Метод draw отрисовывает фрактал на изображении
-void FractalRender::draw(const std::vector<int>& data, ColorMap& colormap, int max_iter) {
-    // Проверка на размер
-    if (data.size() != width * height) return;
+FractalRender::~FractalRender() {
+    UnloadTexture(texture);
+    UnloadImage(image);
+    CloseWindow();
+}
 
+void FractalRender::draw(const std::vector<double>& data, const ColorMap& colormap, int maxIter) {
+    if (data.size() != static_cast<std::size_t>(width) * static_cast<std::size_t>(height)) return;
+
+    // GenImageColor создаёт RGBA-изображение, поэтому можно писать напрямую
+    auto* pixels = static_cast<Color*>(image.data);
+
+#pragma omp parallel for schedule(static)
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            int idx = y * width + x;
-            // Проверка границ
-            if (idx >= 0 && idx < static_cast<int>(data.size())) {
-                Color color = colormap.getColor(data[idx], max_iter);
-                ImageDrawPixel(&image, x, y, color);
-            }
+            const std::size_t idx = static_cast<std::size_t>(y) * width + x;
+            pixels[idx] = colormap.getColor(data[idx], maxIter);
         }
     }
 
-    // Обновляем текстуру, чтобы изменения отображались на экране
     UpdateTexture(texture, image.data);
 }
 
-// Метод display выводит текстуру в окно
-void FractalRender::display() {
+void FractalRender::display(const std::string& info, bool showHelp) const {
     BeginDrawing();
     ClearBackground(BLACK);
     DrawTexture(texture, 0, 0, WHITE);
+
+    // Встроенный шрифт raylib не содержит кириллицы, поэтому интерфейс на английском
+    DrawRectangle(0, 0, width, kTopBarHeight, Fade(BLACK, 0.55f));
+    DrawText("MANDELBROT FRACTAL", 24, 14, 24, RAYWHITE);
+    DrawText(info.c_str(), 24, 46, 16, Fade(RAYWHITE, 0.72f));
+
+    const char* fps = TextFormat("%d FPS", GetFPS());
+    const int fpsWidth = MeasureText(fps, 16);
+    DrawText(fps, width - fpsWidth - 24, 22, 16, Fade(RAYWHITE, 0.6f));
+
+    if (showHelp) {
+        const int panelX = 24;
+        const int panelY = height - kPanelHeight - 24;
+
+        DrawRectangle(panelX, panelY, kPanelWidth, kPanelHeight, Fade(BLACK, 0.55f));
+        DrawText("CONTROLS", panelX + kPanelPadding, panelY + kPanelPadding,
+                 16, Fade(RAYWHITE, 0.55f));
+
+        int lineY = panelY + kPanelPadding + 28;
+        for (const char* line : kHelpLines) {
+            DrawText(line, panelX + kPanelPadding, lineY, 16, RAYWHITE);
+            lineY += kLineHeight;
+        }
+    }
+
     EndDrawing();
 }
 
+bool FractalRender::saveImage(const std::string& path) const {
+    return ExportImage(image, path.c_str());
+}

@@ -1,43 +1,49 @@
 #include "ColorMap.h"
 
-// Конструктор класса
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+
 ColorMap::ColorMap() {
-    colors.push_back(BLACK);
-    colors.push_back(DARKGRAY);
-    colors.push_back(GRAY);
-    colors.push_back(LIGHTGRAY);
-    colors.push_back(WHITE);
-    colors.push_back(RED);
-    colors.push_back(GREEN);
-    colors.push_back(BLUE);
-    colors.push_back(YELLOW);
-    colors.push_back(MAGENTA);
+    // Цвета идут от тёмного фона к яркой границе множества.
+    // Крайние цвета тёмные, поэтому при зацикливании нет резкого шва.
+    colors = {
+        {  5,   3,  20, 255},
+        { 25,  15,  70, 255},
+        { 80,  35, 140, 255},
+        {160,  50, 150, 255},
+        {235, 100, 100, 255},
+        {255, 180,  80, 255},
+        {255, 245, 210, 255},
+        {180,  60, 140, 255},
+        {100,  40, 150, 255},
+        { 40,  25, 100, 255},
+    };
 }
 
-// Метод получения цвета для точки фрактала в зависимости от числа итераций
-Color ColorMap::getColor(int iter, int max_iter) const {
-    // Если палитра пуста, возвращаем черный цвет
-    if (colors.empty()) return BLACK;
-    // Если точка дошла до максимального числа итераций (внутри множества)
-    if (iter >= max_iter) return BLACK;
-
-    // Нормализуем итерацию в диапазон 0..1
-    float t = static_cast<float>(iter) / max_iter;
-    // Определяем два индекса в палитре для интерполяции
-    int idx1 = static_cast<int>(t * (colors.size() - 1));
-    int idx2 = (idx1 + 1) % colors.size();
-    // Вычисляем дробную часть для линейной интерполяции между цветами
-    float frac = t * (colors.size() - 1) - idx1;
-
-    // Получаем два цвета для интерполяции
-    Color c1 = colors[idx1];
-    Color c2 = colors[idx2];
-
-    // Возвращаем интерполированный цвет
+Color ColorMap::lerp(Color from, Color to, float t) {
     return {
-        static_cast<unsigned char>(c1.r + frac * (c2.r - c1.r)),
-        static_cast<unsigned char>(c1.g + frac * (c2.g - c1.g)),
-        static_cast<unsigned char>(c1.b + frac * (c2.b - c1.b)),
+        static_cast<unsigned char>(from.r + (to.r - from.r) * t),
+        static_cast<unsigned char>(from.g + (to.g - from.g) * t),
+        static_cast<unsigned char>(from.b + (to.b - from.b) * t),
         255
     };
+}
+
+Color ColorMap::getColor(double iter, int maxIter) const {
+    if (maxIter <= 0 || iter >= static_cast<double>(maxIter)) return BLACK;
+
+    // С ростом maxIter цикл удлиняется, иначе на глубоком зуме
+    // цветовые полосы становятся слишком частыми.
+    const double cycle = std::max(20.0, static_cast<double>(maxIter) / 25.0);
+
+    const double t = std::max(0.0, iter) / cycle;
+    const double wrapped = t - std::floor(t);
+    const double position = wrapped * static_cast<double>(colors.size());
+
+    const auto index = static_cast<std::size_t>(position);
+    const std::size_t next = (index + 1) % colors.size();
+    const float frac = static_cast<float>(position - static_cast<double>(index));
+
+    return lerp(colors[index], colors[next], frac);
 }

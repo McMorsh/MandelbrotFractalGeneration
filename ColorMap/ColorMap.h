@@ -1,24 +1,21 @@
-#ifndef FARKTALGENERATION_COLORMAP_H
-#define FARKTALGENERATION_COLORMAP_H
+#ifndef MANDELBROT_COLORMAP_H
+#define MANDELBROT_COLORMAP_H
 
-
-#pragma once
 #include <raylib.h>
 #include <vector>
 
-// Класс отвечает за хранение палитры цветов
-// и вычисление цвета для конкретного числа итераций при генерации фрактала
+// Преобразует сглаженное число итераций в цвет.
 class ColorMap {
 private:
-    // Вектор цветов
     std::vector<Color> colors;
+
+    static Color lerp(Color from, Color to, float t);
 public:
-    // Конструктор
     ColorMap();
-    // Метод получения цвета для заданного номера итерации
-    // Возвращает цвет типа Color (Raylib)
-    Color getColor(int iter, int max_iter) const;
+
+    // iter: сглаженное число итераций.
+    // maxIter: порог, начиная с которого точка считается внутренней.
+    Color getColor(double iter, int maxIter) const;
 };
 
-
-#endif //FARKTALGENERATION_COLORMAP_H
+#endif //MANDELBROT_COLORMAP_H

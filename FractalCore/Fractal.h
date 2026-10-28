@@ -1,30 +1,24 @@
-#ifndef FARKTALGENERATION_FRACTAL_H
-#define FARKTALGENERATION_FRACTAL_H
+#ifndef MANDELBROT_FRACTAL_H
+#define MANDELBROT_FRACTAL_H
 
-#pragma once
 #include <vector>
 
-
-// Класс для вычисления фрактального множества Мандельброта.
-// Хранит максимальное число итераций
+// Вычисляет множество Мандельброта для заданного окна комплексной плоскости.
 class Fractal {
 private:
     int maxIterations = 0;
 public:
-    // Конструктор
-    Fractal(int maxIterations);
-    // Вычисление чисто итераций для одной точки
-    // real - действительная часть координаты
-    // imag - мнимая часть координаты
-    // Возвращает количество итераций до выхода за предел модуля 2
-    int compute(double real, double imag) const;
-    // Генерация массива итерация для изображения
-    // width - ширина изображения в пикселях
-    // height - высота изображения в пикселях
-    // Возвращает вектор целых чисел, где каждый элемент — количество итераций для соответствующего пикселя
+    explicit Fractal(int maxIterations);
 
-    std::vector<int> generate(int width, int height) const;
+    // Сглаженное число итераций для точки c = real + i*imag.
+    // Если точка так и не вышла за предел |z| = 2, возвращает maxIterations.
+    double compute(double real, double imag) const;
+
+    // Карта сглаженных итераций для окна width x height.
+    // centerX и centerY задают центр окна, span задаёт его ширину
+    // в комплексных единицах. Ось Im направлена вверх.
+    std::vector<double> generate(int width, int height, double centerX,
+                                 double centerY, double span) const;
 };
 
-
-#endif //FARKTALGENERATION_FRACTAL_H
+#endif //MANDELBROT_FRACTAL_H

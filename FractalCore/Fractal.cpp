@@ -1,45 +1,53 @@
 #include "Fractal.h"
-#include <complex>
-#include <iostream>
-#include <omp.h>
 
-// Конструктор
+#include <cmath>
+#include <complex>
+#include <cstddef>
+
 Fractal::Fractal(int maxIterations) : maxIterations(maxIterations) {}
 
-// Метод compute вычисляет количество итераций для точки на комплексной плоскости
-int Fractal::compute(double real, double imag) const {
-    // комплексное число complex = real + i*imag
-    std::complex<double> complex(real, imag);
-    std::complex<double> z(0, 0);
+double Fractal::compute(double real, double imag) const {
+    const std::complex<double> c(real, imag);
+    std::complex<double> z(0.0, 0.0);
     int iterations = 0;
 
-    // Основной цикл
-    while (abs(z) <= 2.0 && iterations < maxIterations) {
-        z = z * z + complex;
+    // std::norm(z) возвращает |z|^2, поэтому корень не нужен
+    while (std::norm(z) <= 4.0 && iterations < maxIterations) {
+        z = z * z + c;
         iterations++;
     }
 
-    return iterations;
-};
+    // Точка не успела выйти за предел, считаем её принадлежащей множеству
+    if (iterations >= maxIterations) {
+        return static_cast<double>(maxIterations);
+    }
 
-// Метод generate создает полный массив итераций для всего изображения
-std::vector<int> Fractal::generate(int width, int height) const {
-    std::vector<int> result(width * height);
+    // Непрерывная оценка убирает ступени между цветовыми полосами.
+    // 0.5 * log2(|z|^2) = log2(|z|), поэтому nu = log2(log2(|z|)).
+    const double nu = std::log2(0.5 * std::log2(std::norm(z)));
+    return iterations + 1.0 - nu;
+}
 
-    // Используем OpenMP для параллельной обработки строк изображения
+std::vector<double> Fractal::generate(int width, int height, double centerX,
+                                      double centerY, double span) const {
+    if (width <= 0 || height <= 0 || span <= 0.0) return {};
+
+    std::vector<double> result(static_cast<std::size_t>(width) * height);
+
+    // Масштаб одинаков по обеим осям, чтобы фрактал не растягивался
+    const double scale = span / width;
+    const double halfWidth = width * 0.5;
+    const double halfHeight = height * 0.5;
+
+    // Строки независимы, поэтому распараллеливаем внешний цикл
 #pragma omp parallel for schedule(dynamic)
     for (int y = 0; y < height; y++) {
+        const double imag = centerY - (y - halfHeight) * scale;
         for (int x = 0; x < width; x++) {
-            // Преобразуем координаты пикселя в координаты комплексной плоскости
-            double real = (x - width / 2.0) * 4.0 / width;
-            double imag = (y - height / 2.0) * 4.0 / height;
-            result[y * width + x] = compute(real, imag);
-
-            // int thread_num = omp_get_thread_num();
-            // std::cout << "Thread " << thread_num << " computing pixel (" << x << "," << y << ")\n";
+            const double real = centerX + (x - halfWidth) * scale;
+            result[static_cast<std::size_t>(y) * width + x] = compute(real, imag);
         }
     }
 
     return result;
 }
-
