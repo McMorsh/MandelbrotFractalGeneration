@@ -86,8 +86,8 @@ pacman -S --needed git mingw-w64-ucrt-x86_64-gcc \
 git clone https://github.com/McMorsh/MandelbrotFractalGeneration.git
 cd MandelbrotFractalGeneration
 
-cmake -B build-mingw -S . -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build-mingw
+cmake --preset mingw-release
+cmake --build --preset mingw-release
 ./build-mingw/MandelbrotFractalGeneration.exe
 ```
 
