@@ -1,31 +1,32 @@
 #pragma once
 
-#include <raylib.h>
 #include <cstddef>
+#include <raylib.h>
 #include <string>
 #include <vector>
 
 // Преобразует сглаженное число итераций в цвет.
 class ColorMap {
-private:
-    std::size_t paletteIndex = 0;
-    std::vector<Color> colors;
+  private:
+	std::size_t paletteIndex = 0;
+	std::vector<Color> colors;
 
-    static Color lerp(Color from, Color to, float t);
-public:
-    ColorMap();
+	static Color lerp(Color from, Color to, float t);
 
-    // Переключает палитру на следующую.
-    void nextPalette();
+  public:
+	ColorMap();
 
-    // Выбирает палитру по имени без учета регистра.
-    // Возвращает false, если имя неизвестно.
-    bool setPalette(const std::string& name);
+	// Переключает палитру на следующую.
+	void nextPalette();
 
-    // Имя текущей палитры.
-    const char* paletteName() const;
+	// Выбирает палитру по имени без учета регистра.
+	// Возвращает false, если имя неизвестно.
+	bool setPalette(const std::string& name);
 
-    // iter: сглаженное число итераций.
-    // maxIter: порог, начиная с которого точка считается внутренней.
-    Color getColor(double iter, int maxIter) const;
+	// Имя текущей палитры.
+	const char* paletteName() const;
+
+	// iter: сглаженное число итераций.
+	// maxIter: порог, начиная с которого точка считается внутренней.
+	Color getColor(double iter, int maxIter) const;
 };

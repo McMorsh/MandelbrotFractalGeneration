@@ -1,0 +1,37 @@
+BasedOnStyle: LLVM
+
+# Отступы и табы
+IndentWidth: 4
+UseTab: Always
+TabWidth: 4
+ColumnLimit: 120
+
+NamespaceIndentation: All
+
+# Стиль скобок - НА ТОЙ ЖЕ СТРОКЕ
+BreakBeforeBraces: Attach
+
+# Короткие конструкции НЕ на одной строке
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+
+# Выравнивание - ОТКЛЮЧАЕМ выравнивание объявлений
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignOperands: true
+AlignTrailingComments: true
+
+# Указатели
+PointerAlignment: Left
+
+# Отступ для case в switch
+IndentCaseLabels: true
+
+# МАКСИМАЛЬНОЕ КОЛИЧЕСТВО ПУСТЫХ СТРОК
+MaxEmptyLinesToKeep: 2
+
+# Комментарии
+ReflowComments: true
