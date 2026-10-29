@@ -96,7 +96,8 @@ zₙ₊₁ = zₙ² + c
 - компилятор с поддержкой C++20;
 - CMake 3.21 или новее;
 - OpenMP;
-- raylib 5.x или новее.
+- raylib 5.x или новее;
+- GoogleTest (для тестов).
 
 ### Windows (MSYS2 / MinGW)
 
@@ -107,7 +108,8 @@ zₙ₊₁ = zₙ² + c
 pacman -Syu
 pacman -S --needed git mingw-w64-ucrt-x86_64-gcc \
   mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-ninja \
-  mingw-w64-ucrt-x86_64-raylib mingw-w64-ucrt-x86_64-libgomp
+  mingw-w64-ucrt-x86_64-raylib mingw-w64-ucrt-x86_64-libgomp \
+  mingw-w64-ucrt-x86_64-gtest
 ```
 
 Сборка:
@@ -138,7 +140,7 @@ sudo apt install build-essential cmake git curl zip unzip tar pkg-config \
 
 git clone https://github.com/microsoft/vcpkg "$HOME/vcpkg"
 "$HOME/vcpkg/bootstrap-vcpkg.sh"
-"$HOME/vcpkg/vcpkg" install raylib
+"$HOME/vcpkg/vcpkg" install raylib gtest
 
 cmake -B build -S . -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_TOOLCHAIN_FILE="$HOME/vcpkg/scripts/buildsystems/vcpkg.cmake"
@@ -146,6 +148,22 @@ cmake --build build -j
 
 ./build/MandelbrotFractalGeneration
 ```
+
+## Тесты
+
+```bash
+cmake --preset mingw-release
+cmake --build --preset mingw-release
+ctest --preset mingw-release
+```
+
+На Linux тесты запускаются через каталог сборки:
+
+```bash
+ctest --test-dir build --output-on-failure
+```
+
+Если тесты не нужны, конфигурируй с `-DBUILD_TESTING=OFF`.
 
 ## Структура проекта
 
@@ -156,6 +174,7 @@ cmake --build build -j
 | `Renderer/FractalRender.h`, `Renderer/FractalRender.cpp` | Окно, текстура, интерфейс и экспорт PNG |
 | `Renderer/ImageRender.h`, `Renderer/ImageRender.cpp` | Рендер PNG без окна |
 | `main.cpp` | CLI, камера, обработка ввода и главный цикл |
+| `tests/` | Тесты GoogleTest для `Fractal` и `ColorMap` |
 | `docs/` | Изображения для README |
 
 ## Будущие улучшения
@@ -163,7 +182,7 @@ cmake --build build -j
 - другие фракталы: Julia, Burning Ship;
 - фоновый расчёт кадра, чтобы панорамирование не блокировалось на глубоком зуме;
 - рендеринг на GPU;
-- тесты и CI-сборка.
+- CI-сборка в GitHub Actions.
 
 ## Лицензия
 
