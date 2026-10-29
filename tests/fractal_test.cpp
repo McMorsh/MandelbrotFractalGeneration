@@ -4,6 +4,7 @@
 
 #include <cmath>
 #include <cstddef>
+#include <stop_token>
 #include <vector>
 
 namespace {
@@ -80,6 +81,21 @@ TEST(FractalTest, GenerateRejectsInvalidSize) {
 
     EXPECT_TRUE(fractal.generate(0, 10, -0.6, 0.0, 3.5).empty());
     EXPECT_TRUE(fractal.generate(10, -1, -0.6, 0.0, 3.5).empty());
+}
+
+TEST(FractalTest, GenerateRejectsInvalidSpan) {
+    const Fractal fractal(100);
+
+    EXPECT_TRUE(fractal.generate(10, 10, -0.6, 0.0, 0.0).empty());
+    EXPECT_TRUE(fractal.generate(10, 10, -0.6, 0.0, -1.0).empty());
+}
+
+TEST(FractalTest, GenerateStopsWhenCancelled) {
+    const Fractal fractal(100);
+    std::stop_source source;
+    source.request_stop();
+
+    EXPECT_TRUE(fractal.generate(64, 64, -0.6, 0.0, 3.5, source.get_token()).empty());
 }
 
 }  // namespace

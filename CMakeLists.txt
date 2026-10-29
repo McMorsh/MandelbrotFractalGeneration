@@ -11,6 +11,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(raylib CONFIG REQUIRED)
 find_package(OpenMP REQUIRED)
+find_package(Threads REQUIRED)
 
 function(enable_project_warnings target)
     if(MSVC)
@@ -57,6 +58,7 @@ add_executable(MandelbrotFractalGeneration
         FractalCore/Fractal.cpp
         Renderer/FractalRender.cpp
         Renderer/ImageRender.cpp
+        Renderer/RenderWorker.cpp
         ColorMap/ColorMap.cpp)
 
 target_include_directories(MandelbrotFractalGeneration PRIVATE
@@ -66,7 +68,8 @@ target_include_directories(MandelbrotFractalGeneration PRIVATE
 
 target_link_libraries(MandelbrotFractalGeneration PRIVATE
         raylib
-        OpenMP::OpenMP_CXX)
+        OpenMP::OpenMP_CXX
+        Threads::Threads)
 
 enable_project_warnings(MandelbrotFractalGeneration)
 copy_mingw_runtime_dlls(MandelbrotFractalGeneration)

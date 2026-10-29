@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stop_token>
 #include <vector>
 
 // Вычисляет множество Мандельброта для заданного окна комплексной плоскости.
@@ -16,6 +17,8 @@ public:
     // Карта сглаженных итераций для окна width x height.
     // centerX и centerY задают центр окна, span задаёт его ширину
     // в комплексных единицах. Ось Im направлена вверх.
+    // Если stopToken остановлен, возвращает пустой вектор.
     std::vector<double> generate(int width, int height, double centerX,
-                                 double centerY, double span) const;
+                                 double centerY, double span,
+                                 std::stop_token stopToken = {}) const;
 };

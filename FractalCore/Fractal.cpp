@@ -29,8 +29,10 @@ double Fractal::compute(double real, double imag) const {
 }
 
 std::vector<double> Fractal::generate(int width, int height, double centerX,
-                                      double centerY, double span) const {
+                                      double centerY, double span,
+                                      std::stop_token stopToken) const {
     if (width <= 0 || height <= 0 || span <= 0.0) return {};
+    if (stopToken.stop_requested()) return {};
 
     std::vector<double> result(static_cast<std::size_t>(width) * height);
 
@@ -42,12 +44,16 @@ std::vector<double> Fractal::generate(int width, int height, double centerX,
     // Строки независимы, поэтому распараллеливаем внешний цикл
 #pragma omp parallel for schedule(dynamic)
     for (int y = 0; y < height; y++) {
+        if (stopToken.stop_requested()) continue;
+
         const double imag = centerY - (y - halfHeight) * scale;
         for (int x = 0; x < width; x++) {
             const double real = centerX + (x - halfWidth) * scale;
             result[static_cast<std::size_t>(y) * width + x] = compute(real, imag);
         }
     }
+
+    if (stopToken.stop_requested()) return {};
 
     return result;
 }

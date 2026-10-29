@@ -20,12 +20,14 @@ public:
     FractalRender& operator=(const FractalRender&) = delete;
 
     // Переносит карту итераций в изображение и обновляет текстуру.
-    // maxIter задаёт порог принадлежности множеству.
-    void draw(const std::vector<double>& data, const ColorMap& colormap, int maxIter);
+    // dataWidth и dataHeight задают размер карты; текстура масштабируется
+    // под окно. maxIter задаёт порог принадлежности множеству.
+    void draw(const std::vector<double>& data, const ColorMap& colormap,
+              int maxIter, int dataWidth, int dataHeight);
 
     // Выводит текстуру, две строки состояния и подсказки при showHelp.
     void display(const std::string& info, const std::string& details, bool showHelp) const;
 
-    // Сохраняет изображение без интерфейса.
+    // Сохраняет текущее изображение без интерфейса.
     bool saveImage(const std::string& path) const;
 };

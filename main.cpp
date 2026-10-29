@@ -1,19 +1,19 @@
 #include "ColorMap.h"
-#include "Fractal.h"
 #include "FractalRender.h"
 #include "ImageRender.h"
+#include "RenderWorker.h"
 
 #include <raylib.h>
 
 #include <algorithm>
 #include <cerrno>
-#include <chrono>
 #include <climits>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -33,6 +33,11 @@ constexpr int kMinIterations = 50;
 constexpr int kMaxIterations = 5000;
 constexpr int kMinIterationBonus = -2000;
 constexpr int kMaxIterationBonus = 3000;
+
+constexpr int kPreviewScale = 2;
+constexpr int kPreviewWidth = kWindowWidth / kPreviewScale;
+constexpr int kPreviewHeight = kWindowHeight / kPreviewScale;
+constexpr double kFullRenderDelay = 0.2;
 
 // Чем сильнее приближение, тем больше итераций нужно для проработки деталей
 int iterationsForSpan(double span) {
@@ -85,6 +90,10 @@ struct View {
         centerY += delta.y * scale;
     }
 };
+
+bool sameView(const View& lhs, const View& rhs) {
+    return lhs.centerX == rhs.centerX && lhs.centerY == rhs.centerY && lhs.span == rhs.span;
+}
 
 std::string screenshotPath() {
     const std::time_t now = std::time(nullptr);
@@ -231,87 +240,195 @@ int runGui() {
     FractalRender renderer(kWindowWidth, kWindowHeight, "Mandelbrot Fractal Generation");
     ColorMap colormap;
     View view;
+    RenderWorker worker;
 
     bool showHelp = true;
-    bool needsRender = true;
-    bool needsRecolor = false;
     int iterationBonus = 0;
-    int maxIter = 0;
+    int maxIter = iterationsForView(view.span, iterationBonus);
     double renderMs = 0.0;
+    double lastFrameTime = -1.0;
 
     std::vector<double> data;
+    int dataWidth = 0;
+    int dataHeight = 0;
+
+    bool previewActive = false;
+    bool fullRequested = false;
+    double lastInputTime = 0.0;
+    bool hasRequest = false;
+    View lastRequestedView;
+    int lastRequestedBonus = 0;
+
+    bool saveRequested = false;
     std::string notice;
     double noticeTime = 0.0;
 
+    auto submitRender = [&](int renderWidth, int renderHeight) {
+        RenderRequest request;
+        request.width = renderWidth;
+        request.height = renderHeight;
+        request.maxIterations = iterationsForView(view.span, iterationBonus);
+        request.centerX = view.centerX;
+        request.centerY = view.centerY;
+        request.span = view.span;
+        worker.request(request);
+
+        lastRequestedView = view;
+        lastRequestedBonus = iterationBonus;
+        hasRequest = true;
+    };
+
+    auto requestPreview = [&]() {
+        submitRender(kPreviewWidth, kPreviewHeight);
+        previewActive = true;
+        fullRequested = false;
+        lastInputTime = GetTime();
+    };
+
+    auto requestFull = [&]() {
+        submitRender(kWindowWidth, kWindowHeight);
+        previewActive = false;
+        fullRequested = true;
+        lastInputTime = GetTime();
+    };
+
+    auto saveCurrentFrame = [&]() {
+        const std::string path = screenshotPath();
+        notice = renderer.saveImage(path) ? "Saved " + path : "Could not save " + path;
+        noticeTime = GetTime();
+    };
+
+    requestFull();
+
     while (!WindowShouldClose()) {
+        bool viewChanged = false;
+
         if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
             const Vector2 delta = GetMouseDelta();
             if (delta.x != 0.0f || delta.y != 0.0f) {
                 view.panBy(delta);
-                needsRender = true;
+                requestPreview();
+                viewChanged = true;
             }
         }
 
         const float wheel = GetMouseWheelMove();
         if (wheel != 0.0f) {
             const double factor = std::pow(1.2, -static_cast<double>(wheel));
-            needsRender = view.zoomAt(factor, GetMousePosition()) || needsRender;
+            if (view.zoomAt(factor, GetMousePosition())) {
+                requestPreview();
+                viewChanged = true;
+            }
         }
 
         if (IsKeyPressed(KEY_LEFT_BRACKET)) {
-            iterationBonus = std::clamp(iterationBonus - kIterationStep,
-                                        kMinIterationBonus, kMaxIterationBonus);
-            needsRender = true;
+            const int nextBonus = std::clamp(iterationBonus - kIterationStep,
+                                             kMinIterationBonus, kMaxIterationBonus);
+            if (nextBonus != iterationBonus) {
+                iterationBonus = nextBonus;
+                requestFull();
+                viewChanged = true;
+            }
         }
         if (IsKeyPressed(KEY_RIGHT_BRACKET)) {
-            iterationBonus = std::clamp(iterationBonus + kIterationStep,
-                                        kMinIterationBonus, kMaxIterationBonus);
-            needsRender = true;
+            const int nextBonus = std::clamp(iterationBonus + kIterationStep,
+                                             kMinIterationBonus, kMaxIterationBonus);
+            if (nextBonus != iterationBonus) {
+                iterationBonus = nextBonus;
+                requestFull();
+                viewChanged = true;
+            }
         }
 
         if (IsKeyPressed(KEY_P)) {
             colormap.nextPalette();
-            needsRecolor = true;
+            if (!data.empty()) {
+                renderer.draw(data, colormap, maxIter, dataWidth, dataHeight);
+            }
         }
 
         if (IsKeyPressed(KEY_R)) {
-            view = View{};
-            iterationBonus = 0;
-            needsRender = true;
+            const View home;
+            const bool atHome = sameView(view, home) && iterationBonus == 0;
+            const bool homeRequested = hasRequest &&
+                sameView(lastRequestedView, home) && lastRequestedBonus == 0;
+            if (!atHome || !homeRequested) {
+                view = home;
+                iterationBonus = 0;
+                requestFull();
+                viewChanged = true;
+            }
+        }
+
+        if (viewChanged) {
+            saveRequested = false;
         }
 
         if (IsKeyPressed(KEY_H)) {
             showHelp = !showHelp;
         }
 
-        // Пересчитываем фрактал только при изменении вида,
-        // а при смене палитры перекрашиваем готовую карту итераций
-        if (needsRender || needsRecolor) {
-            const auto start = std::chrono::steady_clock::now();
-
-            if (needsRender) {
-                maxIter = iterationsForView(view.span, iterationBonus);
-                const Fractal fractal(maxIter);
-                data = fractal.generate(
-                    kWindowWidth, kWindowHeight, view.centerX, view.centerY, view.span);
-                needsRender = false;
-            }
-
-            renderer.draw(data, colormap, maxIter);
-            needsRecolor = false;
-            renderMs = std::chrono::duration<double, std::milli>(
-                std::chrono::steady_clock::now() - start).count();
+        // После остановки ввода заменяем предпросмотр полным кадром
+        if (previewActive && !fullRequested &&
+            GetTime() - lastInputTime >= kFullRenderDelay) {
+            requestFull();
         }
 
-        // Сохраняем уже пересчитанный кадр, а не предыдущий
+        // Пока воркер считает новый кадр, на экране остается предыдущий
+        RenderResult result;
+        if (worker.tryTake(result)) {
+            data = std::move(result.data);
+            dataWidth = result.width;
+            dataHeight = result.height;
+            maxIter = result.maxIterations;
+            renderMs = result.renderMs;
+            renderer.draw(data, colormap, maxIter, dataWidth, dataHeight);
+            lastFrameTime = GetTime();
+
+            const bool fullSize =
+                dataWidth == kWindowWidth && dataHeight == kWindowHeight;
+            if (fullSize) {
+                fullRequested = false;
+            }
+            if (saveRequested && fullSize) {
+                saveCurrentFrame();
+                saveRequested = false;
+            }
+        }
+
         if (IsKeyPressed(KEY_F12)) {
-            const std::string path = screenshotPath();
-            notice = renderer.saveImage(path) ? "Saved " + path : "Could not save " + path;
-            noticeTime = GetTime();
+            const bool currentFullFrame = !previewActive && !fullRequested &&
+                dataWidth == kWindowWidth && dataHeight == kWindowHeight;
+
+            if (data.empty()) {
+                notice = "Nothing rendered yet";
+                noticeTime = GetTime();
+            } else if (currentFullFrame) {
+                saveCurrentFrame();
+            } else {
+                saveRequested = true;
+                notice = "Waiting for full render";
+                noticeTime = GetTime();
+                if (!previewActive && !fullRequested) {
+                    requestFull();
+                }
+            }
         }
 
         const ComplexPoint cursor = view.pointAt(GetMousePosition());
         std::string info = makeInfo(view, maxIter, colormap.paletteName(), renderMs);
+
+        const bool busy = worker.isBusy();
+        if (lastFrameTime >= 0.0 && (busy || previewActive)) {
+            char buffer[64];
+            std::snprintf(buffer, sizeof(buffer), "   |   image age %.0f ms",
+                          (GetTime() - lastFrameTime) * 1000.0);
+            info += buffer;
+        }
+        if (busy) {
+            info += "   |   rendering...";
+        }
+
         std::string details = makeDetails(view, cursor);
         if (!notice.empty() && GetTime() - noticeTime < 3.0) {
             details += "   |   " + notice;

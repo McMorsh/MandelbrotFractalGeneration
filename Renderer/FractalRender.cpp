@@ -42,16 +42,29 @@ FractalRender::~FractalRender() {
     CloseWindow();
 }
 
-void FractalRender::draw(const std::vector<double>& data, const ColorMap& colormap, int maxIter) {
-    if (data.size() != static_cast<std::size_t>(width) * static_cast<std::size_t>(height)) return;
+void FractalRender::draw(const std::vector<double>& data, const ColorMap& colormap,
+                         int maxIter, int dataWidth, int dataHeight) {
+    if (dataWidth <= 0 || dataHeight <= 0) return;
+    if (data.size() != static_cast<std::size_t>(dataWidth) * dataHeight) return;
+
+    // Предпросмотр и полный кадр имеют разный размер, поэтому текстура
+    // пересоздаётся только при смене разрешения.
+    if (image.width != dataWidth || image.height != dataHeight) {
+        UnloadTexture(texture);
+        UnloadImage(image);
+
+        image = GenImageColor(dataWidth, dataHeight, BLACK);
+        texture = LoadTextureFromImage(image);
+        SetTextureFilter(texture, TEXTURE_FILTER_POINT);
+    }
 
     // GenImageColor создаёт RGBA-изображение, поэтому можно писать напрямую
     auto* pixels = static_cast<Color*>(image.data);
 
 #pragma omp parallel for schedule(static)
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            const std::size_t idx = static_cast<std::size_t>(y) * width + x;
+    for (int y = 0; y < dataHeight; y++) {
+        for (int x = 0; x < dataWidth; x++) {
+            const std::size_t idx = static_cast<std::size_t>(y) * dataWidth + x;
             pixels[idx] = colormap.getColor(data[idx], maxIter);
         }
     }
@@ -63,7 +76,17 @@ void FractalRender::display(const std::string& info, const std::string& details,
                             bool showHelp) const {
     BeginDrawing();
     ClearBackground(BLACK);
-    DrawTexture(texture, 0, 0, WHITE);
+
+    // Кадр может быть меньше окна, если сейчас показан предпросмотр
+    const Rectangle source = {
+        0.0f, 0.0f,
+        static_cast<float>(image.width), static_cast<float>(image.height)
+    };
+    const Rectangle dest = {
+        0.0f, 0.0f,
+        static_cast<float>(width), static_cast<float>(height)
+    };
+    DrawTexturePro(texture, source, dest, Vector2{0.0f, 0.0f}, 0.0f, WHITE);
 
     // Встроенный шрифт raylib не содержит кириллицы, поэтому интерфейс на английском
     DrawRectangle(0, 0, width, kTopBarHeight, Fade(BLACK, 0.55f));
