@@ -1,6 +1,7 @@
 #include "ColorMap.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <cstddef>
 
@@ -52,6 +53,16 @@ const std::vector<Palette>& palettes() {
 }
 
 const char* const kPaletteNames[] = {"Ember", "Ocean", "Mono"};
+
+bool sameName(const std::string& value, const char* name) {
+    std::size_t i = 0;
+    for (; i < value.size() && name[i] != '\0'; ++i) {
+        const auto a = static_cast<unsigned char>(value[i]);
+        const auto b = static_cast<unsigned char>(name[i]);
+        if (std::tolower(a) != std::tolower(b)) return false;
+    }
+    return i == value.size() && name[i] == '\0';
+}
 }
 
 ColorMap::ColorMap() : colors(palettes().front()) {}
@@ -59,6 +70,17 @@ ColorMap::ColorMap() : colors(palettes().front()) {}
 void ColorMap::nextPalette() {
     paletteIndex = (paletteIndex + 1) % palettes().size();
     colors = palettes()[paletteIndex];
+}
+
+bool ColorMap::setPalette(const std::string& name) {
+    for (std::size_t i = 0; i < palettes().size(); ++i) {
+        if (sameName(name, kPaletteNames[i])) {
+            paletteIndex = i;
+            colors = palettes()[i];
+            return true;
+        }
+    }
+    return false;
 }
 
 const char* ColorMap::paletteName() const {

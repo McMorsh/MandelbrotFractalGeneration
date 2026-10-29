@@ -1,13 +1,17 @@
 #include "ColorMap.h"
 #include "Fractal.h"
 #include "FractalRender.h"
+#include "ImageRender.h"
 
 #include <raylib.h>
 
 #include <algorithm>
+#include <cerrno>
 #include <chrono>
+#include <climits>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <ctime>
 #include <string>
 #include <vector>
@@ -112,9 +116,118 @@ std::string makeDetails(const View& view, const ComplexPoint& cursor) {
                   view.centerX, view.centerY, cursor.real, cursor.imag);
     return buffer;
 }
-} // namespace
 
-int main() {
+struct Options {
+    bool showHelp = false;
+    bool headless = false;
+    std::string output;
+    std::string palette = "Ember";
+    RenderSettings settings;
+};
+
+bool parseInt(const char* text, int& value) {
+    errno = 0;
+    char* end = nullptr;
+    const long parsed = std::strtol(text, &end, 10);
+    if (end == text || *end != '\0' || errno == ERANGE ||
+        parsed < INT_MIN || parsed > INT_MAX) {
+        return false;
+    }
+
+    value = static_cast<int>(parsed);
+    return true;
+}
+
+bool parseDouble(const char* text, double& value) {
+    errno = 0;
+    char* end = nullptr;
+    const double parsed = std::strtod(text, &end);
+    if (end == text || *end != '\0' || errno == ERANGE || !std::isfinite(parsed)) {
+        return false;
+    }
+
+    value = parsed;
+    return true;
+}
+
+void printUsage(const char* program) {
+    std::printf(
+        "Usage: %s [options]\n"
+        "\n"
+        "Without options starts the interactive viewer.\n"
+        "\n"
+        "  -o, --output <file>       render to PNG without a window\n"
+        "      --width <pixels>      image width (default 1200)\n"
+        "      --height <pixels>     image height (default 800)\n"
+        "      --iterations <count>  maximum iterations (default: auto)\n"
+        "      --center <re> <im>    view center (default -0.6 0)\n"
+        "      --span <value>        view width in complex units (default 3.5)\n"
+        "      --palette <name>      Ember, Ocean or Mono (default Ember)\n"
+        "  -h, --help                show this help\n",
+        program);
+}
+
+bool parseArguments(int argc, char** argv, Options& options) {
+    for (int i = 1; i < argc; ++i) {
+        const std::string arg = argv[i];
+
+        if (arg == "--help" || arg == "-h") {
+            options.showHelp = true;
+            return true;
+        }
+
+        if (arg == "--output" || arg == "-o") {
+            if (i + 1 >= argc) return false;
+            options.output = argv[++i];
+            options.headless = true;
+            continue;
+        }
+
+        if (arg == "--width") {
+            if (i + 1 >= argc || !parseInt(argv[i + 1], options.settings.width)) return false;
+            ++i;
+            continue;
+        }
+
+        if (arg == "--height") {
+            if (i + 1 >= argc || !parseInt(argv[i + 1], options.settings.height)) return false;
+            ++i;
+            continue;
+        }
+
+        if (arg == "--iterations") {
+            if (i + 1 >= argc || !parseInt(argv[i + 1], options.settings.maxIterations)) return false;
+            ++i;
+            continue;
+        }
+
+        if (arg == "--center") {
+            if (i + 2 >= argc) return false;
+            if (!parseDouble(argv[i + 1], options.settings.centerX)) return false;
+            if (!parseDouble(argv[i + 2], options.settings.centerY)) return false;
+            i += 2;
+            continue;
+        }
+
+        if (arg == "--span") {
+            if (i + 1 >= argc || !parseDouble(argv[i + 1], options.settings.span)) return false;
+            ++i;
+            continue;
+        }
+
+        if (arg == "--palette") {
+            if (i + 1 >= argc) return false;
+            options.palette = argv[++i];
+            continue;
+        }
+
+        return false;
+    }
+
+    return true;
+}
+
+int runGui() {
     FractalRender renderer(kWindowWidth, kWindowHeight, "Mandelbrot Fractal Generation");
     ColorMap colormap;
     View view;
@@ -206,5 +319,58 @@ int main() {
         renderer.display(info, details, showHelp);
     }
 
+    return 0;
+}
+} // namespace
+
+int main(int argc, char** argv) {
+    Options options;
+    if (!parseArguments(argc, argv, options)) {
+        std::fprintf(stderr, "Invalid arguments.\n");
+        printUsage(argv[0]);
+        return 1;
+    }
+
+    if (options.showHelp) {
+        printUsage(argv[0]);
+        return 0;
+    }
+
+    if (!options.headless) {
+        return runGui();
+    }
+
+    if (!(options.settings.span > 0.0)) {
+        std::fprintf(stderr, "Span must be positive.\n");
+        return 1;
+    }
+
+    if (options.settings.maxIterations == 0) {
+        options.settings.maxIterations = iterationsForSpan(options.settings.span);
+    }
+
+    if (!isValidRenderSettings(options.settings)) {
+        std::fprintf(stderr, "Invalid render settings. Check size, iterations and span.\n");
+        return 1;
+    }
+
+    ColorMap colormap;
+    if (!colormap.setPalette(options.palette)) {
+        std::fprintf(stderr, "Unknown palette: %s (available: Ember, Ocean, Mono)\n",
+                     options.palette.c_str());
+        return 1;
+    }
+
+    std::printf("Rendering %dx%d, %d iterations, palette %s...\n",
+                options.settings.width, options.settings.height,
+                options.settings.maxIterations, colormap.paletteName());
+    std::fflush(stdout);
+
+    if (!saveFractalImage(options.output, options.settings, colormap)) {
+        std::fprintf(stderr, "Could not save %s\n", options.output.c_str());
+        return 1;
+    }
+
+    std::printf("Saved %s\n", options.output.c_str());
     return 0;
 }

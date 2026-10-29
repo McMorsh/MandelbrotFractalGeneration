@@ -4,6 +4,7 @@
 #pragma once
 #include <raylib.h>
 #include <cstddef>
+#include <string>
 #include <vector>
 
 // Преобразует сглаженное число итераций в цвет.
@@ -18,6 +19,10 @@ public:
 
     // Переключает палитру на следующую.
     void nextPalette();
+
+    // Выбирает палитру по имени без учета регистра.
+    // Возвращает false, если имя неизвестно.
+    bool setPalette(const std::string& name);
 
     // Имя текущей палитры.
     const char* paletteName() const;

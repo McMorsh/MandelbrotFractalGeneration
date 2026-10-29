@@ -16,6 +16,7 @@ add_executable(MandelbrotFractalGeneration
         main.cpp
         FractalCore/Fractal.cpp
         Renderer/FractalRender.cpp
+        Renderer/ImageRender.cpp
         ColorMap/ColorMap.cpp)
 
 target_include_directories(MandelbrotFractalGeneration PRIVATE
