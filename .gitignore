@@ -29,6 +29,7 @@ CMakeUserPresets.json
 # Скриншоты приложения
 /mandelbrot.png
 /mandelbrot_*.png
+/screenshot*.png
 
 # IDE и система
 *.vcxproj*
@@ -46,3 +47,4 @@ Thumbs.db
 # Личные заметки
 /HelpGit.md
 /Plan.md
+.clang-format
