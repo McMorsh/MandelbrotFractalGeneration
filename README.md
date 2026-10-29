@@ -1,5 +1,7 @@
 # MandelbrotFractalGeneration
 
+[![Build](https://github.com/McMorsh/MandelbrotFractalGeneration/actions/workflows/build.yml/badge.svg)](https://github.com/McMorsh/MandelbrotFractalGeneration/actions/workflows/build.yml)
+
 Визуализация множества Мандельброта на C++20. Пиксели считаются параллельно
 через OpenMP, изображение выводится с помощью raylib.
 
@@ -182,7 +184,7 @@ ctest --test-dir build --output-on-failure
 - другие фракталы: Julia, Burning Ship;
 - фоновый расчёт кадра, чтобы панорамирование не блокировалось на глубоком зуме;
 - рендеринг на GPU;
-- CI-сборка в GitHub Actions.
+- готовые сборки в GitHub Releases.
 
 ## Лицензия
 
