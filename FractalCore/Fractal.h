@@ -1,5 +1,4 @@
-#ifndef MANDELBROT_FRACTAL_H
-#define MANDELBROT_FRACTAL_H
+#pragma once
 
 #include <vector>
 
@@ -20,5 +19,3 @@ public:
     std::vector<double> generate(int width, int height, double centerX,
                                  double centerY, double span) const;
 };
-
-#endif //MANDELBROT_FRACTAL_H

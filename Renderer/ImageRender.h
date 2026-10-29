@@ -1,7 +1,5 @@
-#ifndef MANDELBROT_IMAGE_RENDER_H
-#define MANDELBROT_IMAGE_RENDER_H
-
 #pragma once
+
 #include "ColorMap.h"
 #include <string>
 
@@ -22,5 +20,3 @@ bool isValidRenderSettings(const RenderSettings& settings);
 // Возвращает false, если параметры некорректны или файл не записан.
 bool saveFractalImage(const std::string& path, const RenderSettings& settings,
                       const ColorMap& colormap);
-
-#endif //MANDELBROT_IMAGE_RENDER_H

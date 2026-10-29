@@ -1,8 +1,7 @@
-#ifndef MANDELBROT_FRACTAL_RENDER_H
-#define MANDELBROT_FRACTAL_RENDER_H
-
 #pragma once
+
 #include "ColorMap.h"
+#include <raylib.h>
 #include <string>
 #include <vector>
 
@@ -30,5 +29,3 @@ public:
     // Сохраняет изображение без интерфейса.
     bool saveImage(const std::string& path) const;
 };
-
-#endif //MANDELBROT_FRACTAL_RENDER_H

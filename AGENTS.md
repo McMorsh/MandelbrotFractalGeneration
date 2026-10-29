@@ -55,8 +55,7 @@
 
 ### Заголовки
 
-- Include guard: `MANDELBROT_<МОДУЛЬ>_<ФАЙЛ>_H`, без `#pragma once`.
-- В конце: `#endif  // MANDELBROT_<МОДУЛЬ>_<ФАЙЛ>_H`.
+- `#pragma once` в начале файла. Include guard не используем.
 - В заголовке только объявления и короткие inline-функции. Тяжёлую логику
   держите в `.cpp`.
 
@@ -72,7 +71,6 @@
 | Файлы модулей | PascalCase по имени класса | `Fractal.cpp`, `ColorMap.h` |
 | Тестовые файлы | snake_case, суффикс `_test` | `fractal_test.cpp` |
 | Тестовые suite и case | PascalCase | `TEST(FractalTest, PointInsideSet...)` |
-| Include guard | `MANDELBROT_..._H` | `MANDELBROT_FRACTAL_H` |
 
 Имена на английском, без транслитерации и лишних сокращений. Общепринятые
 сокращения допустимы: `iter`, `info`, `max`. Булевы переменные называйте так,
