@@ -78,6 +78,20 @@ namespace {
 		return buffer;
 	}
 
+	void setWindowIcon() {
+		std::string directory = GetApplicationDirectory();
+		if (!directory.empty() && directory.back() != '/' && directory.back() != '\\')
+			directory += '/';
+
+		const std::string path = directory + "assets/icon.png";
+		Image icon = LoadImage(path.c_str());
+		if (icon.data == nullptr)
+			return;
+
+		SetWindowIcon(icon);
+		UnloadImage(icon);
+	}
+
 	struct Options {
 		bool showHelp = false;
 		bool headless = false;
@@ -198,6 +212,7 @@ namespace {
 	int runGui() {
 		FractalRender renderer(kWindowWidth, kWindowHeight, "Mandelbrot Fractal Generation");
 		ColorMap colormap;
+		setWindowIcon();
 		View view(renderer.getWidth(), renderer.getHeight());
 		const unsigned int hardwareThreads = std::max(1u, std::thread::hardware_concurrency());
 		const int totalThreads = std::max(2, static_cast<int>(hardwareThreads) - 1);

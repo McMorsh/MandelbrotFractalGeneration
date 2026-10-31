@@ -23,6 +23,7 @@
   размера окна, полный кадр после остановки;
 - сохранение изображения без интерфейса в PNG по F2;
 - сохранение PNG в двойном разрешении в фоне по Shift + F2;
+- иконка окна и exe из `assets/icon.png` и `assets/icon.ico`;
 - рендер PNG без окна с параметрами командной строки;
 - пересчёт изображения только при изменении вида, а не каждый кадр.
 
@@ -158,7 +159,9 @@ cmake --build --preset mingw-release
 ```
 
 Чтобы запускать exe из PowerShell или Проводника, не нужно вручную менять PATH:
-CMake при сборке через MinGW сам копирует нужные DLL рядом с exe.
+CMake при сборке через MinGW сам копирует нужные DLL рядом с exe. Иконка окна
+`assets/icon.png` копируется в `assets/` рядом с exe, а `assets/icon.ico`
+встраивается в сам файл.
 
 ### Linux
 
@@ -214,6 +217,7 @@ ctest --test-dir build --output-on-failure
 | `Renderer/RenderWorker.h`, `Renderer/RenderWorker.cpp` | Фоновый расчёт кадров |
 | `main.cpp` | CLI, обработка ввода и главный цикл |
 | `tests/` | Тесты GoogleTest для `Fractal`, `Iterations`, `ColorMap`, `View`, `ViewSnapshot` и `ImageRender` |
+| `assets/` | `icon.png` для окна и `icon.ico` для файла exe |
 | `docs/` | Изображения для README |
 
 ## Будущие улучшения

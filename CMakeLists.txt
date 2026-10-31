@@ -76,6 +76,25 @@ target_link_libraries(MandelbrotFractalGeneration PRIVATE
         Threads::Threads)
 
 enable_project_warnings(MandelbrotFractalGeneration)
+
+if(WIN32)
+    # Иконка самого exe в Проводнике
+    set(APP_ICON_RC "${CMAKE_CURRENT_SOURCE_DIR}/assets/icon.rc")
+    set_source_files_properties(${APP_ICON_RC} PROPERTIES
+            COMPILE_FLAGS "-I\"${CMAKE_CURRENT_SOURCE_DIR}/assets\""
+            OBJECT_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/assets/icon.ico")
+    target_sources(MandelbrotFractalGeneration PRIVATE ${APP_ICON_RC})
+endif()
+
+# Иконка окна загружается из assets/icon.png рядом с exe
+add_custom_command(TARGET MandelbrotFractalGeneration POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+                "$<TARGET_FILE_DIR:MandelbrotFractalGeneration>/assets"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CMAKE_CURRENT_SOURCE_DIR}/assets/icon.png"
+                "$<TARGET_FILE_DIR:MandelbrotFractalGeneration>/assets/icon.png"
+        COMMENT "Copying icon.png")
+
 copy_mingw_runtime_dlls(MandelbrotFractalGeneration)
 
 include(CTest)
