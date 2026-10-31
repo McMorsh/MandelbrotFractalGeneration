@@ -385,7 +385,7 @@ namespace {
 				}
 			}
 
-			if (IsKeyPressed(KEY_F12)) {
+			if (IsKeyPressed(KEY_F2)) {
 				const bool currentFullFrame =
 					!previewActive && !fullRequested && displayedRequestId == lastFullRequestId;
 

@@ -15,7 +15,7 @@ namespace {
 
 	constexpr const char* kHelpLines[] = {
 		"Mouse wheel     zoom in / out", "Left drag       pan",		   "[ / ]           iterations - / +",
-		"P               next palette",	 "R               reset view", "F12             save PNG",
+		"P               next palette",	 "R               reset view", "F2              save PNG",
 		"H               toggle help",	 "Esc             quit",
 	};
 
