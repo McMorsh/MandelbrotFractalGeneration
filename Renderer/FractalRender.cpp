@@ -9,24 +9,20 @@ namespace {
 	constexpr int kMinWindowWidth = 640;
 	constexpr int kMinWindowHeight = 480;
 	constexpr int kTopBarHeight = 96;
-	constexpr int kPanelWidth = 330;
+	constexpr int kPanelWidth = 380;
 	constexpr int kPanelPadding = 16;
 	constexpr int kLineHeight = 20;
+	constexpr int kHelpKeyColumnWidth = 170;
 
-	constexpr const char* kHelpLines[] = {
-		"Mouse wheel     zoom in / out",
-		"Arrows          pan",
-		"+ / -           zoom in / out",
-		"Left drag       pan",
-		"[ / ]           iterations - / +",
-		"P               next palette",
-		"C               copy view",
-		"V               paste view",
-		"R               reset view",
-		"F2              save PNG",
-		"Shift + F2      save 2x PNG",
-		"H               toggle help",
-		"Esc             quit",
+	struct HelpLine {
+		const char* keys;
+		const char* action;
+	};
+
+	constexpr HelpLine kHelpLines[] = {
+		{"Wheel, + / -", "zoom"}, {"Arrows, drag", "pan"},		  {"[ / ]", "iterations"},
+		{"P", "palette"},		  {"C / V", "copy / paste view"}, {"F2 / Shift + F2", "save PNG / 2x PNG"},
+		{"R", "reset view"},	  {"H", "toggle help"},			  {"Esc", "quit"},
 	};
 
 	constexpr int kPanelHeight = kPanelPadding * 2 + 28 + static_cast<int>(std::size(kHelpLines)) * kLineHeight;
@@ -163,8 +159,11 @@ void FractalRender::display(const std::string& info, const std::string& details,
 		DrawText("CONTROLS", panelX + kPanelPadding, panelY + kPanelPadding, 16, Fade(RAYWHITE, 0.55f));
 
 		int lineY = panelY + kPanelPadding + 28;
-		for (const char* line : kHelpLines) {
-			DrawText(line, panelX + kPanelPadding, lineY, 16, RAYWHITE);
+		const int keyX = panelX + kPanelPadding;
+		const int actionX = keyX + kHelpKeyColumnWidth;
+		for (const HelpLine& line : kHelpLines) {
+			DrawText(line.keys, keyX, lineY, 16, RAYWHITE);
+			DrawText(line.action, actionX, lineY, 16, Fade(RAYWHITE, 0.75f));
 			lineY += kLineHeight;
 		}
 	}
