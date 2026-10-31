@@ -2,6 +2,7 @@
 #include "FractalRender.h"
 #include "ImageRender.h"
 #include "RenderWorker.h"
+#include "View.h"
 
 #include <raylib.h>
 
@@ -9,6 +10,7 @@
 #include <cerrno>
 #include <climits>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
@@ -20,14 +22,6 @@ namespace {
 	constexpr int kWindowWidth = 1200;
 	constexpr int kWindowHeight = 800;
 
-	// Начальное окно целиком содержит множество Мандельброта
-	constexpr double kInitialCenterX = -0.6;
-	constexpr double kInitialCenterY = 0.0;
-	constexpr double kInitialSpan = 3.5;
-	// Ниже этого масштаба double перестаёт различать соседние пиксели
-	constexpr double kMinSpan = 1e-11;
-	constexpr double kMaxSpan = 8.0;
-
 	constexpr int kIterationStep = 100;
 	constexpr int kMinIterations = 50;
 	constexpr int kMaxIterations = 5000;
@@ -35,9 +29,9 @@ namespace {
 	constexpr int kMaxIterationBonus = 3000;
 
 	constexpr int kPreviewScale = 2;
-	constexpr int kPreviewWidth = kWindowWidth / kPreviewScale;
-	constexpr int kPreviewHeight = kWindowHeight / kPreviewScale;
 	constexpr double kFullRenderDelay = 0.2;
+	// На узком окне длинные строки с координатами не помещаются
+	constexpr int kWideWindowWidth = 900;
 
 	// Чем сильнее приближение, тем больше итераций нужно для проработки деталей
 	int iterationsForSpan(double span) {
@@ -48,50 +42,6 @@ namespace {
 
 	int iterationsForView(double span, int bonus) {
 		return std::clamp(iterationsForSpan(span) + bonus, kMinIterations, kMaxIterations);
-	}
-
-	struct ComplexPoint {
-		double real;
-		double imag;
-	};
-
-	// View хранит окно комплексной плоскости, которое видно на экране
-	struct View {
-		double centerX = kInitialCenterX;
-		double centerY = kInitialCenterY;
-		double span = kInitialSpan;
-
-		ComplexPoint pointAt(Vector2 mouse) const {
-			const double scale = span / kWindowWidth;
-			return {centerX + (mouse.x - kWindowWidth * 0.5) * scale,
-					centerY - (mouse.y - kWindowHeight * 0.5) * scale};
-		}
-
-		// Приближение колесом мыши: точка под курсором остается на месте.
-		// Возвращает false, если масштаб уже уперся в предел и не изменился.
-		bool zoomAt(double factor, Vector2 mouse) {
-			const double newSpan = std::clamp(span * factor, kMinSpan, kMaxSpan);
-			if (newSpan == span)
-				return false;
-
-			const double newScale = newSpan / kWindowWidth;
-			const ComplexPoint anchor = pointAt(mouse);
-
-			centerX = anchor.real - (mouse.x - kWindowWidth * 0.5) * newScale;
-			centerY = anchor.imag + (mouse.y - kWindowHeight * 0.5) * newScale;
-			span = newSpan;
-			return true;
-		}
-
-		void panBy(Vector2 delta) {
-			const double scale = span / kWindowWidth;
-			centerX -= delta.x * scale;
-			centerY += delta.y * scale;
-		}
-	};
-
-	bool sameView(const View& lhs, const View& rhs) {
-		return lhs.centerX == rhs.centerX && lhs.centerY == rhs.centerY && lhs.span == rhs.span;
 	}
 
 	std::string screenshotPath() {
@@ -114,14 +64,19 @@ namespace {
 	std::string makeInfo(const View& view, int maxIter, const char* palette, double renderMs) {
 		char buffer[256];
 		std::snprintf(buffer, sizeof(buffer), "zoom %.3gx   |   iterations %d   |   %s   |   render %.1f ms",
-					  kInitialSpan / view.span, maxIter, palette, renderMs);
+					  kInitialSpan / view.getSpan(), maxIter, palette, renderMs);
 		return buffer;
 	}
 
-	std::string makeDetails(const View& view, const ComplexPoint& cursor) {
+	std::string makeDetails(const View& view, const ComplexPoint& cursor, bool wideWindow) {
 		char buffer[256];
-		std::snprintf(buffer, sizeof(buffer), "center (%.15g, %+.15gi)   |   cursor (%.15g, %+.15gi)", view.centerX,
-					  view.centerY, cursor.real, cursor.imag);
+		if (wideWindow) {
+			std::snprintf(buffer, sizeof(buffer), "center (%.15g, %+.15gi)   |   cursor (%.15g, %+.15gi)",
+						  view.getCenterX(), view.getCenterY(), cursor.real, cursor.imag);
+		} else {
+			// В узком окне места хватает только на курсор, но точность не теряем
+			std::snprintf(buffer, sizeof(buffer), "cursor (%.15g, %+.15gi)", cursor.real, cursor.imag);
+		}
 		return buffer;
 	}
 
@@ -245,12 +200,16 @@ namespace {
 	int runGui() {
 		FractalRender renderer(kWindowWidth, kWindowHeight, "Mandelbrot Fractal Generation");
 		ColorMap colormap;
-		View view;
+		View view(renderer.getWidth(), renderer.getHeight());
 		RenderWorker worker;
+
+		std::uint64_t nextRequestId = 1;
+		std::uint64_t lastFullRequestId = 0;
+		std::uint64_t displayedRequestId = 0;
 
 		bool showHelp = true;
 		int iterationBonus = 0;
-		int maxIter = iterationsForView(view.span, iterationBonus);
+		int maxIter = iterationsForView(view.getSpan(), iterationBonus);
 		double renderMs = 0.0;
 		double lastFrameTime = -1.0;
 
@@ -262,22 +221,27 @@ namespace {
 		bool fullRequested = false;
 		double lastInputTime = 0.0;
 		bool hasRequest = false;
-		View lastRequestedView;
+		View lastRequestedView(view);
 		int lastRequestedBonus = 0;
 
 		bool saveRequested = false;
 		std::string notice;
 		double noticeTime = 0.0;
 
-		auto submitRender = [&](int renderWidth, int renderHeight) {
+		auto submitRender = [&](int renderWidth, int renderHeight, bool full) {
 			RenderRequest request;
+			request.id = nextRequestId++;
 			request.width = renderWidth;
 			request.height = renderHeight;
-			request.maxIterations = iterationsForView(view.span, iterationBonus);
-			request.centerX = view.centerX;
-			request.centerY = view.centerY;
-			request.span = view.span;
+			request.maxIterations = iterationsForView(view.getSpan(), iterationBonus);
+			request.centerX = view.getCenterX();
+			request.centerY = view.getCenterY();
+			request.span = view.getSpan();
 			worker.request(request);
+
+			if (full) {
+				lastFullRequestId = request.id;
+			}
 
 			lastRequestedView = view;
 			lastRequestedBonus = iterationBonus;
@@ -285,14 +249,17 @@ namespace {
 		};
 
 		auto requestPreview = [&]() {
-			submitRender(kPreviewWidth, kPreviewHeight);
+			submitRender(std::max(view.getWidth() / kPreviewScale, 1), std::max(view.getHeight() / kPreviewScale, 1),
+						 false);
+			// Предпросмотр относится к новому виду: старый полный кадр больше не актуален
+			lastFullRequestId = 0;
 			previewActive = true;
 			fullRequested = false;
 			lastInputTime = GetTime();
 		};
 
 		auto requestFull = [&]() {
-			submitRender(kWindowWidth, kWindowHeight);
+			submitRender(view.getWidth(), view.getHeight(), true);
 			previewActive = false;
 			fullRequested = true;
 			lastInputTime = GetTime();
@@ -309,10 +276,24 @@ namespace {
 		while (!WindowShouldClose()) {
 			bool viewChanged = false;
 
+			// Окно могли растянуть или свернуть. Нулевой размер бывает
+			// у свернутого окна, такой кадр не запрашиваем.
+			const int screenWidth = GetScreenWidth();
+			const int screenHeight = GetScreenHeight();
+			if (screenWidth > 0 && screenHeight > 0 &&
+				(screenWidth != view.getWidth() || screenHeight != view.getHeight())) {
+				renderer.resize(screenWidth, screenHeight);
+				view.resize(screenWidth, screenHeight);
+				requestPreview();
+				viewChanged = true;
+			}
+
+			const Vector2 mouse = GetMousePosition();
+
 			if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
 				const Vector2 delta = GetMouseDelta();
 				if (delta.x != 0.0f || delta.y != 0.0f) {
-					view.panBy(delta);
+					view.panBy(delta.x, delta.y);
 					requestPreview();
 					viewChanged = true;
 				}
@@ -321,7 +302,7 @@ namespace {
 			const float wheel = GetMouseWheelMove();
 			if (wheel != 0.0f) {
 				const double factor = std::pow(1.2, -static_cast<double>(wheel));
-				if (view.zoomAt(factor, GetMousePosition())) {
+				if (view.zoomAt(factor, mouse.x, mouse.y)) {
 					requestPreview();
 					viewChanged = true;
 				}
@@ -354,7 +335,7 @@ namespace {
 			}
 
 			if (IsKeyPressed(KEY_R)) {
-				const View home;
+				const View home(view.getWidth(), view.getHeight());
 				const bool atHome = sameView(view, home) && iterationBonus == 0;
 				const bool homeRequested = hasRequest && sameView(lastRequestedView, home) && lastRequestedBonus == 0;
 				if (!atHome || !homeRequested) {
@@ -366,7 +347,11 @@ namespace {
 			}
 
 			if (viewChanged) {
-				saveRequested = false;
+				if (saveRequested) {
+					saveRequested = false;
+					notice = "Save canceled: view changed";
+					noticeTime = GetTime();
+				}
 			}
 
 			if (IsKeyPressed(KEY_H)) {
@@ -386,22 +371,23 @@ namespace {
 				dataHeight = result.height;
 				maxIter = result.maxIterations;
 				renderMs = result.renderMs;
+				displayedRequestId = result.id;
 				renderer.draw(data, colormap, maxIter, dataWidth, dataHeight);
 				lastFrameTime = GetTime();
 
-				const bool fullSize = dataWidth == kWindowWidth && dataHeight == kWindowHeight;
-				if (fullSize) {
+				// Устаревший кадр мог прийти после смены вида или размера окна
+				if (result.id == lastFullRequestId) {
 					fullRequested = false;
-				}
-				if (saveRequested && fullSize) {
-					saveCurrentFrame();
-					saveRequested = false;
+					if (saveRequested) {
+						saveCurrentFrame();
+						saveRequested = false;
+					}
 				}
 			}
 
 			if (IsKeyPressed(KEY_F12)) {
 				const bool currentFullFrame =
-					!previewActive && !fullRequested && dataWidth == kWindowWidth && dataHeight == kWindowHeight;
+					!previewActive && !fullRequested && displayedRequestId == lastFullRequestId;
 
 				if (data.empty()) {
 					notice = "Nothing rendered yet";
@@ -418,24 +404,23 @@ namespace {
 				}
 			}
 
-			const ComplexPoint cursor = view.pointAt(GetMousePosition());
+			const ComplexPoint cursor = view.pointAt(mouse.x, mouse.y);
 			std::string info = makeInfo(view, maxIter, colormap.paletteName(), renderMs);
 
 			const bool busy = worker.isBusy();
-			if (lastFrameTime >= 0.0 && (busy || previewActive)) {
+			const bool wideWindow = view.getWidth() >= kWideWindowWidth;
+			std::string details = makeDetails(view, cursor, wideWindow);
+			if (lastFrameTime >= 0.0 && (busy || previewActive) && wideWindow) {
 				char buffer[64];
 				std::snprintf(buffer, sizeof(buffer), "   |   image age %.0f ms", (GetTime() - lastFrameTime) * 1000.0);
-				info += buffer;
-			}
-			if (busy) {
-				info += "   |   rendering...";
+				details += buffer;
 			}
 
-			std::string details = makeDetails(view, cursor);
+			std::string visibleNotice;
 			if (!notice.empty() && GetTime() - noticeTime < 3.0) {
-				details += "   |   " + notice;
+				visibleNotice = notice;
 			}
-			renderer.display(info, details, showHelp);
+			renderer.display(info, details, visibleNotice, busy, showHelp);
 		}
 
 		return 0;
