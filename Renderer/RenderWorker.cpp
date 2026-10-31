@@ -86,7 +86,8 @@ void RenderWorker::run(std::stop_token stopToken) {
 			std::lock_guard lock(mutex);
 			if (stopping)
 				return;
-			finished = RenderResult{request.width, request.height, request.maxIterations, renderMs, std::move(data)};
+			finished = RenderResult{request.id, request.width,	request.height, request.maxIterations,
+									renderMs,	std::move(data)};
 		}
 	}
 }

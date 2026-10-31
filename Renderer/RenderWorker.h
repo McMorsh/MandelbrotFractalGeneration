@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <condition_variable>
+#include <cstdint>
 #include <mutex>
 #include <optional>
 #include <stop_token>
@@ -10,6 +11,8 @@
 
 // Параметры одного кадра.
 struct RenderRequest {
+	// Идентификатор запроса: по нему отбрасываются устаревшие кадры
+	std::uint64_t id = 0;
 	int width = 0;
 	int height = 0;
 	int maxIterations = 0;
@@ -20,6 +23,7 @@ struct RenderRequest {
 
 // Готовый кадр и время его расчёта.
 struct RenderResult {
+	std::uint64_t id = 0;
 	int width = 0;
 	int height = 0;
 	int maxIterations = 0;
