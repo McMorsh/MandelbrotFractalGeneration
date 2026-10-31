@@ -4,6 +4,7 @@
 #include "Iterations.h"
 #include "RenderWorker.h"
 #include "View.h"
+#include "ViewSnapshot.h"
 
 #include <raylib.h>
 
@@ -351,6 +352,50 @@ namespace {
 				colormap.nextPalette();
 				if (!data.empty()) {
 					renderer.draw(data, colormap, maxIter, dataWidth, dataHeight);
+				}
+			}
+
+			if (IsKeyPressed(KEY_C)) {
+				// Итерации считаем по текущему виду, иначе в буфер попадёт
+				// число от прошлого кадра
+				const int clipboardIterations = iterationsForView(view.getSpan(), iterationBonus);
+				SetClipboardText(formatViewSnapshot(view, clipboardIterations, colormap.paletteName()).c_str());
+				notice = "Copied to clipboard";
+				noticeTime = GetTime();
+			}
+
+			if (IsKeyPressed(KEY_V)) {
+				const char* clipboard = GetClipboardText();
+				ViewSnapshot snapshot;
+				if (clipboard == nullptr || !parseViewSnapshot(clipboard, snapshot)) {
+					notice = "Clipboard has no view data";
+					noticeTime = GetTime();
+				} else {
+					ColorMap pastedPalette = colormap;
+					if (!pastedPalette.setPalette(snapshot.palette)) {
+						notice = "Unknown palette in clipboard";
+						noticeTime = GetTime();
+					} else if (snapshot.iterations < kMinIterations || snapshot.iterations > kMaxIterations) {
+						notice = "Cannot restore iterations";
+						noticeTime = GetTime();
+					} else {
+						const View pastedView(snapshot.centerX, snapshot.centerY, snapshot.span, view.getWidth(),
+											  view.getHeight());
+						const int bonus = std::clamp(snapshot.iterations - iterationsForSpan(pastedView.getSpan()),
+													 kMinIterationBonus, kMaxIterationBonus);
+						if (iterationsForView(pastedView.getSpan(), bonus) != snapshot.iterations) {
+							notice = "Cannot restore iterations";
+							noticeTime = GetTime();
+						} else {
+							view = pastedView;
+							iterationBonus = bonus;
+							colormap = pastedPalette;
+							requestFull();
+							viewChanged = true;
+							notice = "Pasted view";
+							noticeTime = GetTime();
+						}
+					}
 				}
 			}
 
