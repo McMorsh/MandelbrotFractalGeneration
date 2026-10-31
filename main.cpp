@@ -1,6 +1,7 @@
 #include "ColorMap.h"
 #include "FractalRender.h"
 #include "ImageRender.h"
+#include "Iterations.h"
 #include "RenderWorker.h"
 #include "View.h"
 
@@ -22,27 +23,15 @@ namespace {
 	constexpr int kWindowWidth = 1200;
 	constexpr int kWindowHeight = 800;
 
-	constexpr int kIterationStep = 100;
-	constexpr int kMinIterations = 50;
-	constexpr int kMaxIterations = 5000;
-	constexpr int kMinIterationBonus = -2000;
-	constexpr int kMaxIterationBonus = 3000;
+	constexpr double kIterationRepeatDelay = 0.15;
 
 	constexpr int kPreviewScale = 2;
 	constexpr double kFullRenderDelay = 0.2;
+	constexpr double kKeyboardPanSpeed = 720.0;
+	constexpr double kMaxFrameTime = 0.05;
+	constexpr double kZoomFactor = 1.2;
 	// На узком окне длинные строки с координатами не помещаются
 	constexpr int kWideWindowWidth = 900;
-
-	// Чем сильнее приближение, тем больше итераций нужно для проработки деталей
-	int iterationsForSpan(double span) {
-		const double zoom = kInitialSpan / span;
-		const double iterations = 150.0 + 100.0 * std::log2(std::max(zoom, 1.0));
-		return static_cast<int>(std::clamp(iterations, 150.0, 3000.0));
-	}
-
-	int iterationsForView(double span, int bonus) {
-		return std::clamp(iterationsForSpan(span) + bonus, kMinIterations, kMaxIterations);
-	}
 
 	std::string screenshotPath() {
 		const std::time_t now = std::time(nullptr);
@@ -220,6 +209,7 @@ namespace {
 		bool previewActive = false;
 		bool fullRequested = false;
 		double lastInputTime = 0.0;
+		double iterationRepeatTime = 0.0;
 		bool hasRequest = false;
 		View lastRequestedView(view);
 		int lastRequestedBonus = 0;
@@ -301,30 +291,60 @@ namespace {
 
 			const float wheel = GetMouseWheelMove();
 			if (wheel != 0.0f) {
-				const double factor = std::pow(1.2, -static_cast<double>(wheel));
+				const double factor = std::pow(kZoomFactor, -static_cast<double>(wheel));
 				if (view.zoomAt(factor, mouse.x, mouse.y)) {
 					requestPreview();
 					viewChanged = true;
 				}
 			}
 
-			if (IsKeyPressed(KEY_LEFT_BRACKET)) {
-				const int nextBonus =
-					std::clamp(iterationBonus - kIterationStep, kMinIterationBonus, kMaxIterationBonus);
-				if (nextBonus != iterationBonus) {
-					iterationBonus = nextBonus;
-					requestFull();
+			const double panStep = kKeyboardPanSpeed * std::min(static_cast<double>(GetFrameTime()), kMaxFrameTime);
+			double keyboardPanX = 0.0;
+			double keyboardPanY = 0.0;
+			// Стрелки двигают камеру в свою сторону, как в картах
+			if (IsKeyDown(KEY_LEFT))
+				keyboardPanX += panStep;
+			if (IsKeyDown(KEY_RIGHT))
+				keyboardPanX -= panStep;
+			if (IsKeyDown(KEY_UP))
+				keyboardPanY += panStep;
+			if (IsKeyDown(KEY_DOWN))
+				keyboardPanY -= panStep;
+			if (keyboardPanX != 0.0 || keyboardPanY != 0.0) {
+				view.panBy(keyboardPanX, keyboardPanY);
+				requestPreview();
+				viewChanged = true;
+			}
+
+			const bool keyboardZoomIn = IsKeyPressed(KEY_EQUAL) || IsKeyPressed(KEY_KP_ADD);
+			const bool keyboardZoomOut = IsKeyPressed(KEY_MINUS) || IsKeyPressed(KEY_KP_SUBTRACT);
+			if (keyboardZoomIn || keyboardZoomOut) {
+				const double factor = keyboardZoomIn ? 1.0 / kZoomFactor : kZoomFactor;
+				const double centerX = view.getWidth() * 0.5;
+				const double centerY = view.getHeight() * 0.5;
+				if (view.zoomAt(factor, centerX, centerY)) {
+					requestPreview();
 					viewChanged = true;
 				}
 			}
-			if (IsKeyPressed(KEY_RIGHT_BRACKET)) {
-				const int nextBonus =
-					std::clamp(iterationBonus + kIterationStep, kMinIterationBonus, kMaxIterationBonus);
-				if (nextBonus != iterationBonus) {
+
+			int iterationDelta = 0;
+			if (IsKeyDown(KEY_RIGHT_BRACKET))
+				iterationDelta += kIterationStep;
+			if (IsKeyDown(KEY_LEFT_BRACKET))
+				iterationDelta -= kIterationStep;
+
+			// Первое нажатие срабатывает сразу, дальше шаг повторяется,
+			// пока клавиша удерживается
+			const bool iterationPressed = IsKeyPressed(KEY_LEFT_BRACKET) || IsKeyPressed(KEY_RIGHT_BRACKET);
+			if (iterationDelta != 0 && (iterationPressed || GetTime() >= iterationRepeatTime)) {
+				int nextBonus = 0;
+				if (nextIterationBonus(view.getSpan(), iterationBonus, iterationDelta, nextBonus)) {
 					iterationBonus = nextBonus;
 					requestFull();
 					viewChanged = true;
 				}
+				iterationRepeatTime = GetTime() + kIterationRepeatDelay;
 			}
 
 			if (IsKeyPressed(KEY_P)) {
