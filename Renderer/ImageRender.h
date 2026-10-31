@@ -2,6 +2,10 @@
 
 #include "ColorMap.h"
 #include <string>
+#include <vector>
+
+// Максимальный размер стороны изображения в пикселях.
+inline constexpr int kMaxImageDimension = 8192;
 
 // Параметры кадра для рендера без окна.
 struct RenderSettings {
@@ -15,6 +19,11 @@ struct RenderSettings {
 
 // Проверяет размеры, число итераций и границы окна.
 bool isValidRenderSettings(const RenderSettings& settings);
+
+// Сохраняет готовую карту итераций в PNG без окна.
+// Возвращает false, если размеры не совпадают с data или файл не записан.
+bool saveIterationImage(const std::string& path, const std::vector<double>& data, int width, int height,
+						int maxIterations, const ColorMap& colormap);
 
 // Рендерит фрактал и сохраняет его в PNG.
 // Возвращает false, если параметры некорректны или файл не записан.

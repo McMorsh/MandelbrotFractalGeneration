@@ -14,12 +14,19 @@ namespace {
 	constexpr int kLineHeight = 20;
 
 	constexpr const char* kHelpLines[] = {
-		"Mouse wheel     zoom in / out",	"Arrows          pan",
-		"+ / -           zoom in / out",	"Left drag       pan",
-		"[ / ]           iterations - / +", "P               next palette",
-		"C               copy view",		"V               paste view",
-		"R               reset view",		"F2              save PNG",
-		"H               toggle help",		"Esc             quit",
+		"Mouse wheel     zoom in / out",
+		"Arrows          pan",
+		"+ / -           zoom in / out",
+		"Left drag       pan",
+		"[ / ]           iterations - / +",
+		"P               next palette",
+		"C               copy view",
+		"V               paste view",
+		"R               reset view",
+		"F2              save PNG",
+		"Shift + F2      save 2x PNG",
+		"H               toggle help",
+		"Esc             quit",
 	};
 
 	constexpr int kPanelHeight = kPanelPadding * 2 + 28 + static_cast<int>(std::size(kHelpLines)) * kLineHeight;
@@ -110,8 +117,8 @@ void FractalRender::draw(const std::vector<double>& data, const ColorMap& colorm
 	UpdateTexture(texture, image.data);
 }
 
-void FractalRender::display(const std::string& info, const std::string& details, const std::string& notice, bool busy,
-							bool showHelp) const {
+void FractalRender::display(const std::string& info, const std::string& details, const std::string& notice,
+							const std::string& status, bool showHelp) const {
 	BeginDrawing();
 	ClearBackground(BLACK);
 
@@ -142,7 +149,8 @@ void FractalRender::display(const std::string& info, const std::string& details,
 		DrawText(details.c_str(), 24, 68, 16, Fade(RAYWHITE, 0.55f));
 	}
 
-	const char* fps = busy ? TextFormat("%d FPS   |   rendering...", GetFPS()) : TextFormat("%d FPS", GetFPS());
+	const char* fps =
+		status.empty() ? TextFormat("%d FPS", GetFPS()) : TextFormat("%d FPS   |   %s", GetFPS(), status.c_str());
 	const int fpsWidth = MeasureText(fps, 16);
 	DrawText(fps, width - fpsWidth - 24, 22, 16, Fade(RAYWHITE, 0.6f));
 

@@ -38,9 +38,9 @@ class FractalRender {
 	void draw(const std::vector<double>& data, const ColorMap& colormap, int maxIter, int dataWidth, int dataHeight);
 
 	// Выводит текстуру, строки состояния, уведомление и подсказки.
-	// busy показывает индикатор фонового расчёта, showHelp включает панель.
-	void display(const std::string& info, const std::string& details, const std::string& notice, bool busy,
-				 bool showHelp) const;
+	// status показывается рядом с FPS, showHelp включает панель.
+	void display(const std::string& info, const std::string& details, const std::string& notice,
+				 const std::string& status, bool showHelp) const;
 
 	// Сохраняет текущее изображение без интерфейса.
 	bool saveImage(const std::string& path) const;

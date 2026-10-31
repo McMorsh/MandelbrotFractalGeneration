@@ -51,6 +51,10 @@ std::vector<double> Fractal::generate(int width, int height, double centerX, dou
 
 		const double imag = centerY - (y - halfHeight) * scale;
 		for (int x = 0; x < width; x++) {
+			// Отмена проверяется редко, чтобы не тормозить внутренний цикл
+			if ((x & 63) == 0 && stopToken.stop_requested())
+				break;
+
 			const double real = centerX + (x - halfWidth) * scale;
 			result[static_cast<std::size_t>(y) * width + x] = compute(real, imag);
 		}

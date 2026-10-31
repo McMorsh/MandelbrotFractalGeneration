@@ -60,6 +60,7 @@ add_executable(MandelbrotFractalGeneration
         FractalCore/View.cpp
         FractalCore/ViewSnapshot.cpp
         Renderer/FractalRender.cpp
+        Renderer/ImageExportWorker.cpp
         Renderer/ImageRender.cpp
         Renderer/RenderWorker.cpp
         ColorMap/ColorMap.cpp)
@@ -85,6 +86,7 @@ if(BUILD_TESTING)
     add_executable(mandelbrot_tests
             tests/fractal_test.cpp
             tests/color_map_test.cpp
+            tests/image_render_test.cpp
             tests/iterations_test.cpp
             tests/view_test.cpp
             tests/view_snapshot_test.cpp
@@ -92,11 +94,13 @@ if(BUILD_TESTING)
             FractalCore/Iterations.cpp
             FractalCore/View.cpp
             FractalCore/ViewSnapshot.cpp
-            ColorMap/ColorMap.cpp)
+            ColorMap/ColorMap.cpp
+            Renderer/ImageRender.cpp)
 
     target_include_directories(mandelbrot_tests PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/FractalCore
-            ${CMAKE_CURRENT_SOURCE_DIR}/ColorMap)
+            ${CMAKE_CURRENT_SOURCE_DIR}/ColorMap
+            ${CMAKE_CURRENT_SOURCE_DIR}/Renderer)
 
     target_link_libraries(mandelbrot_tests PRIVATE
             GTest::gtest_main

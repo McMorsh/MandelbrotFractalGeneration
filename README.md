@@ -22,6 +22,7 @@
 - предпросмотр в половинном разрешении при перетаскивании, зуме и изменении
   размера окна, полный кадр после остановки;
 - сохранение изображения без интерфейса в PNG по F2;
+- сохранение PNG в двойном разрешении в фоне по Shift + F2;
 - рендер PNG без окна с параметрами командной строки;
 - пересчёт изображения только при изменении вида, а не каждый кадр.
 
@@ -43,12 +44,18 @@
 | Сменить палитру | P |
 | Сбросить вид | R |
 | Сохранить PNG | F2 |
+| Сохранить PNG в двойном разрешении | Shift + F2 |
 | Показать или скрыть подсказки | H |
 | Выход | Esc |
 
 Сохранённое изображение не содержит панелей и подсказок. Файл
 `mandelbrot_ГГГГММДД_ЧЧММСС.png` появляется в текущем каталоге. Если на экране
 предпросмотр, F2 дождётся полного кадра и сохранит его.
+
+`Shift + F2` запускает отдельный фоновый расчёт в двойном разрешении и сохраняет
+`mandelbrot_ГГГГММДД_ЧЧММСС_2x.png`. Каждая сторона больше в 2 раза, то есть
+пикселей в 4 раза больше. Окно продолжает отвечать, а в строке состояния
+показывается `saving 2x...`. На глубоком зуме такой кадр считается дольше.
 
 F12 обрабатывает сама raylib: она сохраняет `screenshotNNN.png` вместе с
 интерфейсом. Поэтому для чистого PNG используется отдельная клавиша.
@@ -202,10 +209,11 @@ ctest --test-dir build --output-on-failure
 | `FractalCore/ViewSnapshot.h`, `FractalCore/ViewSnapshot.cpp` | Формат и разбор параметров вида для буфера обмена |
 | `ColorMap/ColorMap.h`, `ColorMap/ColorMap.cpp` | Палитры и преобразование итераций в цвет |
 | `Renderer/FractalRender.h`, `Renderer/FractalRender.cpp` | Окно, текстура, интерфейс и экспорт PNG |
-| `Renderer/ImageRender.h`, `Renderer/ImageRender.cpp` | Рендер PNG без окна |
+| `Renderer/ImageRender.h`, `Renderer/ImageRender.cpp` | Рендер и сохранение PNG без окна |
+| `Renderer/ImageExportWorker.h`, `Renderer/ImageExportWorker.cpp` | Фоновый экспорт PNG в двойном разрешении |
 | `Renderer/RenderWorker.h`, `Renderer/RenderWorker.cpp` | Фоновый расчёт кадров |
 | `main.cpp` | CLI, обработка ввода и главный цикл |
-| `tests/` | Тесты GoogleTest для `Fractal`, `Iterations`, `ColorMap`, `View` и `ViewSnapshot` |
+| `tests/` | Тесты GoogleTest для `Fractal`, `Iterations`, `ColorMap`, `View`, `ViewSnapshot` и `ImageRender` |
 | `docs/` | Изображения для README |
 
 ## Будущие улучшения

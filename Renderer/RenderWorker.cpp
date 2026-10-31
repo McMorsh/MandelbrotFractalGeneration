@@ -7,7 +7,8 @@
 #include <chrono>
 #include <utility>
 
-RenderWorker::RenderWorker() : worker([this](std::stop_token stopToken) { run(stopToken); }) {
+RenderWorker::RenderWorker(int threadLimit)
+	: threadLimit(threadLimit), worker([this](std::stop_token stopToken) { run(stopToken); }) {
 }
 
 RenderWorker::~RenderWorker() {
@@ -50,8 +51,9 @@ bool RenderWorker::isBusy() const {
 }
 
 void RenderWorker::run(std::stop_token stopToken) {
-	// Оставляем ядра главному потоку, иначе окно теряет кадры при перетаскивании
-	omp_set_num_threads(std::max(1, omp_get_num_procs() - 2));
+	// Оставляем ядра главному потоку, если лимит не задан явно
+	const int threads = threadLimit > 0 ? threadLimit : std::max(1, omp_get_num_procs() - 2);
+	omp_set_num_threads(threads);
 
 	while (true) {
 		RenderRequest request;

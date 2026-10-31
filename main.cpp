@@ -1,5 +1,6 @@
 #include "ColorMap.h"
 #include "FractalRender.h"
+#include "ImageExportWorker.h"
 #include "ImageRender.h"
 #include "Iterations.h"
 #include "RenderWorker.h"
@@ -17,6 +18,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -27,6 +29,7 @@ namespace {
 	constexpr double kIterationRepeatDelay = 0.15;
 
 	constexpr int kPreviewScale = 2;
+	constexpr int kSaveScale = 2;
 	constexpr double kFullRenderDelay = 0.2;
 	constexpr double kKeyboardPanSpeed = 720.0;
 	constexpr double kMaxFrameTime = 0.05;
@@ -34,21 +37,26 @@ namespace {
 	// На узком окне длинные строки с координатами не помещаются
 	constexpr int kWideWindowWidth = 900;
 
-	std::string screenshotPath() {
+	std::string screenshotPath(const char* suffix = "") {
 		const std::time_t now = std::time(nullptr);
 
 		std::tm local{};
 #if defined(_WIN32)
-		if (localtime_s(&local, &now) != 0)
-			return "mandelbrot.png";
+		const bool hasTime = localtime_s(&local, &now) == 0;
 #else
-		if (!localtime_r(&now, &local))
-			return "mandelbrot.png";
+		const bool hasTime = localtime_r(&now, &local) != nullptr;
 #endif
 
-		char buffer[64];
-		std::strftime(buffer, sizeof(buffer), "mandelbrot_%Y%m%d_%H%M%S.png", &local);
-		return buffer;
+		std::string path = "mandelbrot";
+		if (hasTime) {
+			char buffer[64];
+			if (std::strftime(buffer, sizeof(buffer), "mandelbrot_%Y%m%d_%H%M%S", &local) > 0)
+				path = buffer;
+		}
+
+		path += suffix;
+		path += ".png";
+		return path;
 	}
 
 	std::string makeInfo(const View& view, int maxIter, const char* palette, double renderMs) {
@@ -191,7 +199,13 @@ namespace {
 		FractalRender renderer(kWindowWidth, kWindowHeight, "Mandelbrot Fractal Generation");
 		ColorMap colormap;
 		View view(renderer.getWidth(), renderer.getHeight());
-		RenderWorker worker;
+		const unsigned int hardwareThreads = std::max(1u, std::thread::hardware_concurrency());
+		const int totalThreads = std::max(2, static_cast<int>(hardwareThreads) - 1);
+		const int exportThreads = std::max(1, totalThreads / 4);
+		const int displayThreads = std::max(1, totalThreads - exportThreads);
+
+		RenderWorker worker(displayThreads);
+		ImageExportWorker exportWorker(exportThreads);
 
 		std::uint64_t nextRequestId = 1;
 		std::uint64_t lastFullRequestId = 0;
@@ -216,6 +230,7 @@ namespace {
 		int lastRequestedBonus = 0;
 
 		bool saveRequested = false;
+		std::uint64_t saveRequestId = 0;
 		std::string notice;
 		double noticeTime = 0.0;
 
@@ -259,6 +274,39 @@ namespace {
 		auto saveCurrentFrame = [&]() {
 			const std::string path = screenshotPath();
 			notice = renderer.saveImage(path) ? "Saved " + path : "Could not save " + path;
+			noticeTime = GetTime();
+		};
+
+		auto requestHighResolutionSave = [&]() {
+			if (saveRequestId != 0) {
+				notice = "Save already in progress";
+				noticeTime = GetTime();
+				return;
+			}
+
+			const int saveWidth = view.getWidth() * kSaveScale;
+			const int saveHeight = view.getHeight() * kSaveScale;
+			if (saveWidth > kMaxImageDimension || saveHeight > kMaxImageDimension) {
+				notice = "2x image is too large";
+				noticeTime = GetTime();
+				return;
+			}
+
+			ImageExportRequest request;
+			request.id = nextRequestId++;
+			request.width = saveWidth;
+			request.height = saveHeight;
+			request.maxIterations = iterationsForView(view.getSpan(), iterationBonus);
+			request.centerX = view.getCenterX();
+			request.centerY = view.getCenterY();
+			request.span = view.getSpan();
+			request.path = screenshotPath("_2x");
+			request.colormap = colormap;
+
+			saveRequestId = request.id;
+			exportWorker.request(request);
+
+			notice = "Rendering 2x...";
 			noticeTime = GetTime();
 		};
 
@@ -450,21 +498,35 @@ namespace {
 				}
 			}
 
-			if (IsKeyPressed(KEY_F2)) {
-				const bool currentFullFrame =
-					!previewActive && !fullRequested && displayedRequestId == lastFullRequestId;
+			ImageExportResult exportResult;
+			if (exportWorker.tryTake(exportResult)) {
+				if (exportResult.id == saveRequestId) {
+					notice = exportResult.saved ? "Saved " + exportResult.path : "Could not save " + exportResult.path;
+					noticeTime = GetTime();
+				}
+				saveRequestId = 0;
+			}
 
-				if (data.empty()) {
-					notice = "Nothing rendered yet";
-					noticeTime = GetTime();
-				} else if (currentFullFrame) {
-					saveCurrentFrame();
+			if (IsKeyPressed(KEY_F2)) {
+				const bool highResolution = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
+				if (highResolution) {
+					requestHighResolutionSave();
 				} else {
-					saveRequested = true;
-					notice = "Waiting for full render";
-					noticeTime = GetTime();
-					if (!previewActive && !fullRequested) {
-						requestFull();
+					const bool currentFullFrame =
+						!previewActive && !fullRequested && displayedRequestId == lastFullRequestId;
+
+					if (data.empty()) {
+						notice = "Nothing rendered yet";
+						noticeTime = GetTime();
+					} else if (currentFullFrame) {
+						saveCurrentFrame();
+					} else {
+						saveRequested = true;
+						notice = "Waiting for full render";
+						noticeTime = GetTime();
+						if (!previewActive && !fullRequested) {
+							requestFull();
+						}
 					}
 				}
 			}
@@ -473,6 +535,15 @@ namespace {
 			std::string info = makeInfo(view, maxIter, colormap.paletteName(), renderMs);
 
 			const bool busy = worker.isBusy();
+			std::string status;
+			if (busy)
+				status = "rendering...";
+			if (saveRequestId != 0) {
+				if (!status.empty())
+					status += "   |   ";
+				status += "saving 2x...";
+			}
+
 			const bool wideWindow = view.getWidth() >= kWideWindowWidth;
 			std::string details = makeDetails(view, cursor, wideWindow);
 			if (lastFrameTime >= 0.0 && (busy || previewActive) && wideWindow) {
@@ -485,7 +556,7 @@ namespace {
 			if (!notice.empty() && GetTime() - noticeTime < 3.0) {
 				visibleNotice = notice;
 			}
-			renderer.display(info, details, visibleNotice, busy, showHelp);
+			renderer.display(info, details, visibleNotice, status, showHelp);
 		}
 
 		return 0;

@@ -35,7 +35,9 @@ struct RenderResult {
 // но не прерывает уже начатый расчёт.
 class RenderWorker {
   public:
-	RenderWorker();
+	// threadLimit ограничивает число потоков OpenMP; 0 оставляет
+	// главному потоку два ядра.
+	explicit RenderWorker(int threadLimit = 0);
 	~RenderWorker();
 
 	RenderWorker(const RenderWorker&) = delete;
@@ -59,5 +61,6 @@ class RenderWorker {
 	std::optional<RenderResult> finished;
 	std::atomic<bool> busy{false};
 	bool stopping = false;
+	int threadLimit = 0;
 	std::jthread worker;
 };
