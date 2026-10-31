@@ -14,9 +14,12 @@ namespace {
 	constexpr int kLineHeight = 20;
 
 	constexpr const char* kHelpLines[] = {
-		"Mouse wheel     zoom in / out", "Left drag       pan",		   "[ / ]           iterations - / +",
-		"P               next palette",	 "R               reset view", "F2              save PNG",
-		"H               toggle help",	 "Esc             quit",
+		"Mouse wheel     zoom in / out",	"Arrows          pan",
+		"+ / -           zoom in / out",	"Left drag       pan",
+		"[ / ]           iterations - / +", "P               next palette",
+		"C               copy view",		"V               paste view",
+		"R               reset view",		"F2              save PNG",
+		"H               toggle help",		"Esc             quit",
 	};
 
 	constexpr int kPanelHeight = kPanelPadding * 2 + 28 + static_cast<int>(std::size(kHelpLines)) * kLineHeight;
