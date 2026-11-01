@@ -304,7 +304,9 @@ namespace {
 			request.id = nextRequestId++;
 			request.width = preset.width;
 			request.height = preset.height;
-			request.maxIterations = iterationsForView(exportSpan, iterationBonus);
+			// Итерации считаем по экранному span: экспорт шире окна, и от exportSpan
+			// их было бы меньше, чем на экране, из-за чего терялись бы тонкие детали
+			request.maxIterations = iterationsForView(view.getSpan(), iterationBonus);
 			request.centerX = view.getCenterX();
 			request.centerY = view.getCenterY();
 			request.span = exportSpan;
