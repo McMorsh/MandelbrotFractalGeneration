@@ -124,7 +124,7 @@
 - Не используйте длинные тире U+2014 и U+2013. Только дефис или перестроенная
   фраза.
 - TODO: `// TODO(McMorsh): ...`.
-- Закрывающий namespace: `}  // namespace`.
+- Закрывающий namespace: `} // namespace`.
 - Устаревший комментарий считается ошибкой. Меняете поведение, меняйте
   комментарий.
 
@@ -200,7 +200,7 @@ TEST(FractalTest, PointOutsideSetEscapesQuickly) {
     EXPECT_LT(fractal.compute(3.0, 0.0), 5.0);
 }
 
-}  // namespace
+} // namespace
 ```
 
 Подключение в CMake:
