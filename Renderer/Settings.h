@@ -8,6 +8,8 @@
 // Настройки интерфейса, которые сохраняются между запусками.
 struct Settings {
 	Language language = Language::Russian;
+	// Имя палитры, по умолчанию совпадает с первой палитрой ColorMap
+	std::string palette = "Ember";
 	// Метка пресета PNG, по умолчанию совпадает с FHD
 	std::string exportPreset = "FHD";
 };

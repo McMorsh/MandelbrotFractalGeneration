@@ -216,6 +216,8 @@ namespace {
 		renderer.setLanguage(language);
 		const UiText* ui = &uiText(language);
 		ColorMap colormap;
+		colormap.setPalette(settings.palette);
+		settings.palette = colormap.paletteName();
 		setWindowIcon();
 		View view(renderer.getWidth(), renderer.getHeight());
 		const unsigned int hardwareThreads = std::max(1u, std::thread::hardware_concurrency());
@@ -416,6 +418,9 @@ namespace {
 
 			if (IsKeyPressed(KEY_P)) {
 				colormap.nextPalette();
+				settings.palette = colormap.paletteName();
+				if (!saveSettings(settings, settingsFile))
+					TraceLog(LOG_WARNING, "Could not save settings: %s", settingsFile.string().c_str());
 				if (!data.empty()) {
 					renderer.draw(data, colormap, maxIter, dataWidth, dataHeight);
 				}
@@ -456,6 +461,9 @@ namespace {
 							view = pastedView;
 							iterationBonus = bonus;
 							colormap = pastedPalette;
+							settings.palette = colormap.paletteName();
+							if (!saveSettings(settings, settingsFile))
+								TraceLog(LOG_WARNING, "Could not save settings: %s", settingsFile.string().c_str());
 							requestFull();
 							notice = ui->pastedView;
 							noticeTime = GetTime();

@@ -1,3 +1,4 @@
+#include "ColorMap.h"
 #include "ExportPresets.h"
 #include "Settings.h"
 
@@ -30,6 +31,15 @@ namespace {
 		EXPECT_EQ(parseSettings("language=en\r\n").language, Language::English);
 	}
 
+	TEST(SettingsTest, ParsesPalette) {
+		EXPECT_EQ(parseSettings("palette=Ocean\n").palette, "Ocean");
+	}
+
+	TEST(SettingsTest, DefaultPaletteIsKnown) {
+		ColorMap colormap;
+		EXPECT_TRUE(colormap.setPalette(Settings{}.palette));
+	}
+
 	TEST(SettingsTest, ParsesExportPreset) {
 		EXPECT_EQ(parseSettings("png=4K\n").exportPreset, "4K");
 	}
@@ -41,11 +51,13 @@ namespace {
 	TEST(SettingsTest, FormatRoundTrip) {
 		Settings settings;
 		settings.language = Language::English;
+		settings.palette = "Ocean";
 		settings.exportPreset = "8K";
 
-		EXPECT_EQ(formatSettings(settings), "language=en\npng=8K\n");
+		EXPECT_EQ(formatSettings(settings), "language=en\npalette=Ocean\npng=8K\n");
 		const Settings parsed = parseSettings(formatSettings(settings));
 		EXPECT_EQ(parsed.language, Language::English);
+		EXPECT_EQ(parsed.palette, "Ocean");
 		EXPECT_EQ(parsed.exportPreset, "8K");
 	}
 
@@ -62,11 +74,13 @@ namespace {
 
 		Settings settings;
 		settings.language = Language::English;
+		settings.palette = "Ocean";
 		settings.exportPreset = "8K";
 
 		ASSERT_TRUE(saveSettings(settings, path));
 		const Settings loaded = loadSettings(path);
 		EXPECT_EQ(loaded.language, Language::English);
+		EXPECT_EQ(loaded.palette, "Ocean");
 		EXPECT_EQ(loaded.exportPreset, "8K");
 
 		std::filesystem::remove(path);

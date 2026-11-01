@@ -8,6 +8,7 @@
 
 namespace {
 	constexpr const char* kLanguageKey = "language=";
+	constexpr const char* kPaletteKey = "palette=";
 	constexpr const char* kExportPresetKey = "png=";
 	constexpr const char* kRussianValue = "ru";
 	constexpr const char* kEnglishValue = "en";
@@ -56,6 +57,10 @@ Settings parseSettings(const std::string& text) {
 				settings.language = Language::Russian;
 			else if (value == kEnglishValue)
 				settings.language = Language::English;
+		} else if (line.starts_with(kPaletteKey)) {
+			const std::string value = line.substr(std::string(kPaletteKey).size());
+			if (!value.empty())
+				settings.palette = value;
 		} else if (line.starts_with(kExportPresetKey)) {
 			const std::string value = line.substr(std::string(kExportPresetKey).size());
 			if (!value.empty())
@@ -69,6 +74,7 @@ Settings parseSettings(const std::string& text) {
 std::string formatSettings(const Settings& settings) {
 	const char* language = settings.language == Language::English ? kEnglishValue : kRussianValue;
 	std::string text = std::string(kLanguageKey) + language + "\n";
+	text += std::string(kPaletteKey) + settings.palette + "\n";
 	text += std::string(kExportPresetKey) + settings.exportPreset + "\n";
 	return text;
 }
