@@ -113,6 +113,7 @@ if(BUILD_TESTING)
     add_executable(mandelbrot_tests
             tests/fractal_test.cpp
             tests/color_map_test.cpp
+            tests/export_presets_test.cpp
             tests/image_render_test.cpp
             tests/iterations_test.cpp
             tests/localization_test.cpp

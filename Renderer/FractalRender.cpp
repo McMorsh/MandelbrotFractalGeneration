@@ -232,10 +232,6 @@ void FractalRender::display(const std::string& info, const std::string& details,
 	EndDrawing();
 }
 
-bool FractalRender::saveImage(const std::string& path) const {
-	return ExportImage(image, path.c_str());
-}
-
 void FractalRender::setLanguage(Language language) {
 	this->language = language;
 	SetWindowTitle(uiText(language).windowTitle);

@@ -48,7 +48,4 @@ class FractalRender {
 
 	// Меняет язык заголовка окна и панели подсказок.
 	void setLanguage(Language language);
-
-	// Сохраняет текущее изображение без интерфейса.
-	bool saveImage(const std::string& path) const;
 };

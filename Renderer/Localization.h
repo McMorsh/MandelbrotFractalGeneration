@@ -20,16 +20,11 @@ struct UiText {
 	const char* unknownPalette;
 	const char* cannotRestoreIterations;
 	const char* pastedView;
-	const char* saveCanceled;
-	const char* nothingRendered;
-	const char* waitingFullRender;
 	const char* saveInProgress;
-	const char* imageTooLarge;
-	const char* rendering2x;
+	const char* renderingExportFormat;
 	const char* savedPrefix;
 	const char* saveFailedPrefix;
 	const char* statusRendering;
-	const char* statusPng2x;
 };
 
 // Строка панели подсказок: клавиши слева, действие справа.
@@ -38,7 +33,7 @@ struct HelpLineText {
 	const char* action;
 };
 
-inline constexpr int kHelpLineCount = 10;
+inline constexpr int kHelpLineCount = 11;
 
 // Возвращает противоположный язык.
 Language nextLanguage(Language language);

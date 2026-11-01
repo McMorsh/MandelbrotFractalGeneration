@@ -1,4 +1,5 @@
 #include "ColorMap.h"
+#include "ExportPresets.h"
 #include "FractalRender.h"
 #include "ImageExportWorker.h"
 #include "ImageRender.h"
@@ -32,7 +33,6 @@ namespace {
 	constexpr double kIterationRepeatDelay = 0.15;
 
 	constexpr int kPreviewScale = 2;
-	constexpr int kSaveScale = 2;
 	constexpr double kFullRenderDelay = 0.2;
 	constexpr double kKeyboardPanSpeed = 720.0;
 	constexpr double kMaxFrameTime = 0.05;
@@ -40,7 +40,7 @@ namespace {
 	// На узком окне длинные строки с координатами не помещаются
 	constexpr int kWideWindowWidth = 900;
 
-	std::string screenshotPath(const char* suffix = "") {
+	std::string screenshotPath(const char* suffix) {
 		const std::time_t now = std::time(nullptr);
 
 		std::tm local{};
@@ -62,10 +62,11 @@ namespace {
 		return path;
 	}
 
-	std::string makeInfo(const View& view, int maxIter, const char* palette, double renderMs, const UiText& text) {
+	std::string makeInfo(const View& view, int maxIter, const char* palette, double renderMs, const char* exportLabel,
+						 const UiText& text) {
 		char buffer[256];
 		std::snprintf(buffer, sizeof(buffer), text.infoFormat, kInitialSpan / view.getSpan(), maxIter, palette,
-					  renderMs);
+					  renderMs, exportLabel);
 		return buffer;
 	}
 
@@ -227,7 +228,6 @@ namespace {
 
 		std::uint64_t nextRequestId = 1;
 		std::uint64_t lastFullRequestId = 0;
-		std::uint64_t displayedRequestId = 0;
 
 		bool showHelp = true;
 		int iterationBonus = 0;
@@ -247,8 +247,9 @@ namespace {
 		View lastRequestedView(view);
 		int lastRequestedBonus = 0;
 
-		bool saveRequested = false;
 		std::uint64_t saveRequestId = 0;
+		std::string saveLabel;
+		int exportIndex = 0;
 		std::string notice;
 		double noticeTime = 0.0;
 
@@ -289,50 +290,40 @@ namespace {
 			lastInputTime = GetTime();
 		};
 
-		auto saveCurrentFrame = [&]() {
-			const std::string path = screenshotPath();
-			notice = renderer.saveImage(path) ? ui->savedPrefix + path : ui->saveFailedPrefix + path;
-			noticeTime = GetTime();
-		};
-
-		auto requestHighResolutionSave = [&]() {
+		auto requestPresetExport = [&]() {
 			if (saveRequestId != 0) {
 				notice = ui->saveInProgress;
 				noticeTime = GetTime();
 				return;
 			}
 
-			const int saveWidth = view.getWidth() * kSaveScale;
-			const int saveHeight = view.getHeight() * kSaveScale;
-			if (saveWidth > kMaxImageDimension || saveHeight > kMaxImageDimension) {
-				notice = ui->imageTooLarge;
-				noticeTime = GetTime();
-				return;
-			}
+			const ExportPreset& preset = kExportPresets[exportIndex];
+			const double exportSpan = exportSpanFor(view.getSpan(), view.getWidth(), view.getHeight(), preset);
 
 			ImageExportRequest request;
 			request.id = nextRequestId++;
-			request.width = saveWidth;
-			request.height = saveHeight;
-			request.maxIterations = iterationsForView(view.getSpan(), iterationBonus);
+			request.width = preset.width;
+			request.height = preset.height;
+			request.maxIterations = iterationsForView(exportSpan, iterationBonus);
 			request.centerX = view.getCenterX();
 			request.centerY = view.getCenterY();
-			request.span = view.getSpan();
-			request.path = screenshotPath("_2x");
+			request.span = exportSpan;
+			request.path = screenshotPath(preset.suffix);
 			request.colormap = colormap;
 
 			saveRequestId = request.id;
+			saveLabel = preset.label;
 			exportWorker.request(request);
 
-			notice = ui->rendering2x;
+			char buffer[64];
+			std::snprintf(buffer, sizeof(buffer), ui->renderingExportFormat, preset.label);
+			notice = buffer;
 			noticeTime = GetTime();
 		};
 
 		requestFull();
 
 		while (!WindowShouldClose()) {
-			bool viewChanged = false;
-
 			// Окно могли растянуть или свернуть. Нулевой размер бывает
 			// у свернутого окна, такой кадр не запрашиваем.
 			const int screenWidth = GetScreenWidth();
@@ -342,7 +333,6 @@ namespace {
 				renderer.resize(screenWidth, screenHeight);
 				view.resize(screenWidth, screenHeight);
 				requestPreview();
-				viewChanged = true;
 			}
 
 			const Vector2 mouse = GetMousePosition();
@@ -352,7 +342,6 @@ namespace {
 				if (delta.x != 0.0f || delta.y != 0.0f) {
 					view.panBy(delta.x, delta.y);
 					requestPreview();
-					viewChanged = true;
 				}
 			}
 
@@ -361,26 +350,38 @@ namespace {
 				const double factor = std::pow(kZoomFactor, -static_cast<double>(wheel));
 				if (view.zoomAt(factor, mouse.x, mouse.y)) {
 					requestPreview();
-					viewChanged = true;
 				}
 			}
 
-			const double panStep = kKeyboardPanSpeed * std::min(static_cast<double>(GetFrameTime()), kMaxFrameTime);
-			double keyboardPanX = 0.0;
-			double keyboardPanY = 0.0;
-			// Стрелки двигают камеру в свою сторону, как в картах
-			if (IsKeyDown(KEY_LEFT))
-				keyboardPanX += panStep;
-			if (IsKeyDown(KEY_RIGHT))
-				keyboardPanX -= panStep;
-			if (IsKeyDown(KEY_UP))
-				keyboardPanY += panStep;
-			if (IsKeyDown(KEY_DOWN))
-				keyboardPanY -= panStep;
-			if (keyboardPanX != 0.0 || keyboardPanY != 0.0) {
-				view.panBy(keyboardPanX, keyboardPanY);
-				requestPreview();
-				viewChanged = true;
+			const bool shiftDown = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
+
+			// Shift со стрелками меняет разрешение PNG и не двигает камеру
+			if (shiftDown && (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_RIGHT))) {
+				const int delta = IsKeyPressed(KEY_RIGHT) ? 1 : -1;
+				exportIndex = adjustExportPresetIndex(exportIndex, delta);
+				const ExportPreset& preset = kExportPresets[exportIndex];
+				notice = "PNG " + std::string(preset.label) + " (" + std::to_string(preset.width) + "x" +
+						 std::to_string(preset.height) + ")";
+				noticeTime = GetTime();
+			}
+
+			if (!shiftDown) {
+				const double panStep = kKeyboardPanSpeed * std::min(static_cast<double>(GetFrameTime()), kMaxFrameTime);
+				double keyboardPanX = 0.0;
+				double keyboardPanY = 0.0;
+				// Стрелки двигают камеру в свою сторону, как в картах
+				if (IsKeyDown(KEY_LEFT))
+					keyboardPanX += panStep;
+				if (IsKeyDown(KEY_RIGHT))
+					keyboardPanX -= panStep;
+				if (IsKeyDown(KEY_UP))
+					keyboardPanY += panStep;
+				if (IsKeyDown(KEY_DOWN))
+					keyboardPanY -= panStep;
+				if (keyboardPanX != 0.0 || keyboardPanY != 0.0) {
+					view.panBy(keyboardPanX, keyboardPanY);
+					requestPreview();
+				}
 			}
 
 			const bool keyboardZoomIn = IsKeyPressed(KEY_EQUAL) || IsKeyPressed(KEY_KP_ADD);
@@ -391,7 +392,6 @@ namespace {
 				const double centerY = view.getHeight() * 0.5;
 				if (view.zoomAt(factor, centerX, centerY)) {
 					requestPreview();
-					viewChanged = true;
 				}
 			}
 
@@ -409,7 +409,6 @@ namespace {
 				if (nextIterationBonus(view.getSpan(), iterationBonus, iterationDelta, nextBonus)) {
 					iterationBonus = nextBonus;
 					requestFull();
-					viewChanged = true;
 				}
 				iterationRepeatTime = GetTime() + kIterationRepeatDelay;
 			}
@@ -457,7 +456,6 @@ namespace {
 							iterationBonus = bonus;
 							colormap = pastedPalette;
 							requestFull();
-							viewChanged = true;
 							notice = ui->pastedView;
 							noticeTime = GetTime();
 						}
@@ -473,15 +471,6 @@ namespace {
 					view = home;
 					iterationBonus = 0;
 					requestFull();
-					viewChanged = true;
-				}
-			}
-
-			if (viewChanged) {
-				if (saveRequested) {
-					saveRequested = false;
-					notice = ui->saveCanceled;
-					noticeTime = GetTime();
 				}
 			}
 
@@ -512,18 +501,12 @@ namespace {
 				dataHeight = result.height;
 				maxIter = result.maxIterations;
 				renderMs = result.renderMs;
-				displayedRequestId = result.id;
 				renderer.draw(data, colormap, maxIter, dataWidth, dataHeight);
 				lastFrameTime = GetTime();
 
 				// Устаревший кадр мог прийти после смены вида или размера окна
-				if (result.id == lastFullRequestId) {
+				if (result.id == lastFullRequestId)
 					fullRequested = false;
-					if (saveRequested) {
-						saveCurrentFrame();
-						saveRequested = false;
-					}
-				}
 			}
 
 			ImageExportResult exportResult;
@@ -537,31 +520,12 @@ namespace {
 			}
 
 			if (IsKeyPressed(KEY_F2)) {
-				const bool highResolution = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
-				if (highResolution) {
-					requestHighResolutionSave();
-				} else {
-					const bool currentFullFrame =
-						!previewActive && !fullRequested && displayedRequestId == lastFullRequestId;
-
-					if (data.empty()) {
-						notice = ui->nothingRendered;
-						noticeTime = GetTime();
-					} else if (currentFullFrame) {
-						saveCurrentFrame();
-					} else {
-						saveRequested = true;
-						notice = ui->waitingFullRender;
-						noticeTime = GetTime();
-						if (!previewActive && !fullRequested) {
-							requestFull();
-						}
-					}
-				}
+				requestPresetExport();
 			}
 
 			const ComplexPoint cursor = view.pointAt(mouse.x, mouse.y);
-			std::string info = makeInfo(view, maxIter, colormap.paletteName(), renderMs, *ui);
+			std::string info =
+				makeInfo(view, maxIter, colormap.paletteName(), renderMs, kExportPresets[exportIndex].label, *ui);
 
 			const bool busy = worker.isBusy();
 			std::string status;
@@ -570,7 +534,7 @@ namespace {
 			if (saveRequestId != 0) {
 				if (!status.empty())
 					status += " + ";
-				status += ui->statusPng2x;
+				status += "PNG " + saveLabel;
 			}
 
 			const bool wideWindow = view.getWidth() >= kWideWindowWidth;

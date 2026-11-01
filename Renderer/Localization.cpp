@@ -7,7 +7,7 @@ namespace {
 		"Генерация множества Мандельброта",
 		"ФРАКТАЛ МАНДЕЛЬБРОТА",
 		"УПРАВЛЕНИЕ",
-		"масштаб %.3gx   |   итераций %d   |   %s   | рендер %.1f мс",
+		"масштаб %.3gx   |   итераций %d   |   %s   | рендер %.1f мс   |   PNG %s",
 		"центр (%.15g, %+.15gi)   |   курсор (%.15g, %+.15gi)",
 		"курсор (%.15g, %+.15gi)",
 		"   |   время с рендера %.0f мс",
@@ -16,23 +16,18 @@ namespace {
 		"Неизвестная палитра в буфере обмена",
 		"Не удалось восстановить итерации",
 		"Вид вставлен",
-		"Сохранение отменено: вид изменён",
-		"Рендер ещё не завершён",
-		"Ожидание полного рендера",
 		"Сохранение уже идёт",
-		"Изображение 2x слишком большое",
-		"Рендер 2x...",
+		"Рендер %s...",
 		"Сохранено ",
 		"Не удалось сохранить ",
 		"рендер",
-		"PNG 2x",
 	};
 
 	constexpr UiText kEnglishText = {
 		"Mandelbrot Fractal Generation",
 		"MANDELBROT FRACTAL",
 		"CONTROLS",
-		"zoom %.3gx   |   iterations %d   |   %s   |   render %.1f ms",
+		"zoom %.3gx   |   iterations %d   |   %s   |   render %.1f ms   |   PNG %s",
 		"center (%.15g, %+.15gi)   |   cursor (%.15g, %+.15gi)",
 		"cursor (%.15g, %+.15gi)",
 		"   |   image age %.0f ms",
@@ -41,16 +36,11 @@ namespace {
 		"Unknown palette in clipboard",
 		"Cannot restore iterations",
 		"Pasted view",
-		"Save canceled: view changed",
-		"Nothing rendered yet",
-		"Waiting for full render",
 		"Save already in progress",
-		"2x image is too large",
-		"Rendering 2x...",
+		"Rendering %s...",
 		"Saved ",
 		"Could not save ",
 		"rendering",
-		"PNG 2x",
 	};
 
 	constexpr HelpLineText kRussianHelp[] = {
@@ -59,7 +49,8 @@ namespace {
 		{"[ / ]", "итерации"},
 		{"P", "палитра"},
 		{"C / V", "копировать / вставить"},
-		{"F2 / Shift + F2", "PNG / PNG 2x"},
+		{"F2", "сохранить PNG"},
+		{"Shift + влево / вправо", "размер PNG"},
 		{"R", "сброс вида"},
 		{"L", "локализация"},
 		{"H", "справка"},
@@ -67,9 +58,16 @@ namespace {
 	};
 
 	constexpr HelpLineText kEnglishHelp[] = {
-		{"Wheel, + / -", "zoom"}, {"Arrows, LMB", "pan"},	 {"[ / ]", "iterations"},
-		{"P", "palette"},		  {"C / V", "copy / paste"}, {"F2 / Shift + F2", "PNG / PNG 2x"},
-		{"R", "reset view"},	  {"L", "language"},		 {"H", "help"},
+		{"Wheel, + / -", "zoom"},
+		{"Arrows, LMB", "pan"},
+		{"[ / ]", "iterations"},
+		{"P", "palette"},
+		{"C / V", "copy / paste"},
+		{"F2", "save PNG"},
+		{"Shift + Left / Right", "PNG size"},
+		{"R", "reset view"},
+		{"L", "language"},
+		{"H", "help"},
 		{"Esc", "quit"},
 	};
 
