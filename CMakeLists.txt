@@ -62,6 +62,7 @@ add_executable(MandelbrotFractalGeneration
         Renderer/FractalRender.cpp
         Renderer/ImageExportWorker.cpp
         Renderer/ImageRender.cpp
+        Renderer/Localization.cpp
         Renderer/RenderWorker.cpp
         ColorMap/ColorMap.cpp)
 
@@ -93,7 +94,13 @@ add_custom_command(TARGET MandelbrotFractalGeneration POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${CMAKE_CURRENT_SOURCE_DIR}/assets/icon.png"
                 "$<TARGET_FILE_DIR:MandelbrotFractalGeneration>/assets/icon.png"
-        COMMENT "Copying icon.png")
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CMAKE_CURRENT_SOURCE_DIR}/assets/IBMPlexMono-Regular.ttf"
+                "$<TARGET_FILE_DIR:MandelbrotFractalGeneration>/assets/IBMPlexMono-Regular.ttf"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CMAKE_CURRENT_SOURCE_DIR}/assets/OFL.txt"
+                "$<TARGET_FILE_DIR:MandelbrotFractalGeneration>/assets/OFL.txt"
+        COMMENT "Copying assets")
 
 copy_mingw_runtime_dlls(MandelbrotFractalGeneration)
 
@@ -107,6 +114,7 @@ if(BUILD_TESTING)
             tests/color_map_test.cpp
             tests/image_render_test.cpp
             tests/iterations_test.cpp
+            tests/localization_test.cpp
             tests/view_test.cpp
             tests/view_snapshot_test.cpp
             FractalCore/Fractal.cpp
@@ -114,7 +122,8 @@ if(BUILD_TESTING)
             FractalCore/View.cpp
             FractalCore/ViewSnapshot.cpp
             ColorMap/ColorMap.cpp
-            Renderer/ImageRender.cpp)
+            Renderer/ImageRender.cpp
+            Renderer/Localization.cpp)
 
     target_include_directories(mandelbrot_tests PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/FractalCore

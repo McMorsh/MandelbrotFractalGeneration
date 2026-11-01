@@ -3,6 +3,7 @@
 #include "ImageExportWorker.h"
 #include "ImageRender.h"
 #include "Iterations.h"
+#include "Localization.h"
 #include "RenderWorker.h"
 #include "View.h"
 #include "ViewSnapshot.h"
@@ -59,22 +60,17 @@ namespace {
 		return path;
 	}
 
-	std::string makeInfo(const View& view, int maxIter, const char* palette, double renderMs) {
+	std::string makeInfo(const View& view, int maxIter, const char* palette, double renderMs, const UiText& text) {
 		char buffer[256];
-		std::snprintf(buffer, sizeof(buffer), "zoom %.3gx   |   iterations %d   |   %s   |   render %.1f ms",
-					  kInitialSpan / view.getSpan(), maxIter, palette, renderMs);
+		std::snprintf(buffer, sizeof(buffer), text.infoFormat, kInitialSpan / view.getSpan(), maxIter, palette,
+					  renderMs);
 		return buffer;
 	}
 
-	std::string makeDetails(const View& view, const ComplexPoint& cursor, bool wideWindow) {
+	std::string makeDetails(const View& view, const ComplexPoint& cursor, bool wideWindow, const UiText& text) {
 		char buffer[256];
-		if (wideWindow) {
-			std::snprintf(buffer, sizeof(buffer), "center (%.15g, %+.15gi)   |   cursor (%.15g, %+.15gi)",
-						  view.getCenterX(), view.getCenterY(), cursor.real, cursor.imag);
-		} else {
-			// В узком окне места хватает только на курсор, но точность не теряем
-			std::snprintf(buffer, sizeof(buffer), "cursor (%.15g, %+.15gi)", cursor.real, cursor.imag);
-		}
+		std::snprintf(buffer, sizeof(buffer), wideWindow ? text.detailsFormat : text.detailsNarrowFormat,
+					  view.getCenterX(), view.getCenterY(), cursor.real, cursor.imag);
 		return buffer;
 	}
 
@@ -210,7 +206,10 @@ namespace {
 	}
 
 	int runGui() {
-		FractalRender renderer(kWindowWidth, kWindowHeight, "Mandelbrot Fractal Generation");
+		Language language = Language::Russian;
+		FractalRender renderer(kWindowWidth, kWindowHeight, uiText(language).windowTitle);
+		renderer.setLanguage(language);
+		const UiText* ui = &uiText(language);
 		ColorMap colormap;
 		setWindowIcon();
 		View view(renderer.getWidth(), renderer.getHeight());
@@ -288,13 +287,13 @@ namespace {
 
 		auto saveCurrentFrame = [&]() {
 			const std::string path = screenshotPath();
-			notice = renderer.saveImage(path) ? "Saved " + path : "Could not save " + path;
+			notice = renderer.saveImage(path) ? ui->savedPrefix + path : ui->saveFailedPrefix + path;
 			noticeTime = GetTime();
 		};
 
 		auto requestHighResolutionSave = [&]() {
 			if (saveRequestId != 0) {
-				notice = "Save already in progress";
+				notice = ui->saveInProgress;
 				noticeTime = GetTime();
 				return;
 			}
@@ -302,7 +301,7 @@ namespace {
 			const int saveWidth = view.getWidth() * kSaveScale;
 			const int saveHeight = view.getHeight() * kSaveScale;
 			if (saveWidth > kMaxImageDimension || saveHeight > kMaxImageDimension) {
-				notice = "2x image is too large";
+				notice = ui->imageTooLarge;
 				noticeTime = GetTime();
 				return;
 			}
@@ -321,7 +320,7 @@ namespace {
 			saveRequestId = request.id;
 			exportWorker.request(request);
 
-			notice = "Rendering 2x...";
+			notice = ui->rendering2x;
 			noticeTime = GetTime();
 		};
 
@@ -423,7 +422,7 @@ namespace {
 				// число от прошлого кадра
 				const int clipboardIterations = iterationsForView(view.getSpan(), iterationBonus);
 				SetClipboardText(formatViewSnapshot(view, clipboardIterations, colormap.paletteName()).c_str());
-				notice = "Copied to clipboard";
+				notice = ui->copied;
 				noticeTime = GetTime();
 			}
 
@@ -431,15 +430,15 @@ namespace {
 				const char* clipboard = GetClipboardText();
 				ViewSnapshot snapshot;
 				if (clipboard == nullptr || !parseViewSnapshot(clipboard, snapshot)) {
-					notice = "Clipboard has no view data";
+					notice = ui->clipboardNoView;
 					noticeTime = GetTime();
 				} else {
 					ColorMap pastedPalette = colormap;
 					if (!pastedPalette.setPalette(snapshot.palette)) {
-						notice = "Unknown palette in clipboard";
+						notice = ui->unknownPalette;
 						noticeTime = GetTime();
 					} else if (snapshot.iterations < kMinIterations || snapshot.iterations > kMaxIterations) {
-						notice = "Cannot restore iterations";
+						notice = ui->cannotRestoreIterations;
 						noticeTime = GetTime();
 					} else {
 						const View pastedView(snapshot.centerX, snapshot.centerY, snapshot.span, view.getWidth(),
@@ -447,7 +446,7 @@ namespace {
 						const int bonus = std::clamp(snapshot.iterations - iterationsForSpan(pastedView.getSpan()),
 													 kMinIterationBonus, kMaxIterationBonus);
 						if (iterationsForView(pastedView.getSpan(), bonus) != snapshot.iterations) {
-							notice = "Cannot restore iterations";
+							notice = ui->cannotRestoreIterations;
 							noticeTime = GetTime();
 						} else {
 							view = pastedView;
@@ -455,7 +454,7 @@ namespace {
 							colormap = pastedPalette;
 							requestFull();
 							viewChanged = true;
-							notice = "Pasted view";
+							notice = ui->pastedView;
 							noticeTime = GetTime();
 						}
 					}
@@ -477,13 +476,20 @@ namespace {
 			if (viewChanged) {
 				if (saveRequested) {
 					saveRequested = false;
-					notice = "Save canceled: view changed";
+					notice = ui->saveCanceled;
 					noticeTime = GetTime();
 				}
 			}
 
 			if (IsKeyPressed(KEY_H)) {
 				showHelp = !showHelp;
+			}
+
+			if (IsKeyPressed(KEY_L)) {
+				language = nextLanguage(language);
+				ui = &uiText(language);
+				renderer.setLanguage(language);
+				notice.clear();
 			}
 
 			// После остановки ввода заменяем предпросмотр полным кадром
@@ -516,7 +522,8 @@ namespace {
 			ImageExportResult exportResult;
 			if (exportWorker.tryTake(exportResult)) {
 				if (exportResult.id == saveRequestId) {
-					notice = exportResult.saved ? "Saved " + exportResult.path : "Could not save " + exportResult.path;
+					notice = exportResult.saved ? ui->savedPrefix + exportResult.path
+												: ui->saveFailedPrefix + exportResult.path;
 					noticeTime = GetTime();
 				}
 				saveRequestId = 0;
@@ -531,13 +538,13 @@ namespace {
 						!previewActive && !fullRequested && displayedRequestId == lastFullRequestId;
 
 					if (data.empty()) {
-						notice = "Nothing rendered yet";
+						notice = ui->nothingRendered;
 						noticeTime = GetTime();
 					} else if (currentFullFrame) {
 						saveCurrentFrame();
 					} else {
 						saveRequested = true;
-						notice = "Waiting for full render";
+						notice = ui->waitingFullRender;
 						noticeTime = GetTime();
 						if (!previewActive && !fullRequested) {
 							requestFull();
@@ -547,23 +554,23 @@ namespace {
 			}
 
 			const ComplexPoint cursor = view.pointAt(mouse.x, mouse.y);
-			std::string info = makeInfo(view, maxIter, colormap.paletteName(), renderMs);
+			std::string info = makeInfo(view, maxIter, colormap.paletteName(), renderMs, *ui);
 
 			const bool busy = worker.isBusy();
 			std::string status;
 			if (busy)
-				status = "rendering...";
+				status = ui->statusRendering;
 			if (saveRequestId != 0) {
 				if (!status.empty())
-					status += "   |   ";
-				status += "saving 2x...";
+					status += " + ";
+				status += ui->statusPng2x;
 			}
 
 			const bool wideWindow = view.getWidth() >= kWideWindowWidth;
-			std::string details = makeDetails(view, cursor, wideWindow);
+			std::string details = makeDetails(view, cursor, wideWindow, *ui);
 			if (lastFrameTime >= 0.0 && (busy || previewActive) && wideWindow) {
 				char buffer[64];
-				std::snprintf(buffer, sizeof(buffer), "   |   image age %.0f ms", (GetTime() - lastFrameTime) * 1000.0);
+				std::snprintf(buffer, sizeof(buffer), ui->imageAgeFormat, (GetTime() - lastFrameTime) * 1000.0);
 				details += buffer;
 			}
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ColorMap.h"
+#include "Localization.h"
 #include <raylib.h>
 #include <string>
 #include <vector>
@@ -11,6 +12,9 @@ class FractalRender {
 	int width, height;
 	Image image;
 	Texture2D texture;
+	Font font{};
+	bool customFont = false;
+	Language language = Language::Russian;
 
   public:
 	FractalRender(int width, int height, const char* title);
@@ -41,6 +45,9 @@ class FractalRender {
 	// status показывается рядом с FPS, showHelp включает панель.
 	void display(const std::string& info, const std::string& details, const std::string& notice,
 				 const std::string& status, bool showHelp) const;
+
+	// Меняет язык заголовка окна и панели подсказок.
+	void setLanguage(Language language);
 
 	// Сохраняет текущее изображение без интерфейса.
 	bool saveImage(const std::string& path) const;
