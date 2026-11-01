@@ -249,7 +249,7 @@ namespace {
 
 		std::uint64_t saveRequestId = 0;
 		std::string saveLabel;
-		int exportIndex = 0;
+		int exportIndex = exportPresetIndex(settings.exportPreset);
 		std::string notice;
 		double noticeTime = 0.0;
 
@@ -361,10 +361,9 @@ namespace {
 			if (shiftDown && (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_RIGHT))) {
 				const int delta = IsKeyPressed(KEY_RIGHT) ? 1 : -1;
 				exportIndex = adjustExportPresetIndex(exportIndex, delta);
-				const ExportPreset& preset = kExportPresets[exportIndex];
-				notice = "PNG " + std::string(preset.label) + " (" + std::to_string(preset.width) + "x" +
-						 std::to_string(preset.height) + ")";
-				noticeTime = GetTime();
+				settings.exportPreset = kExportPresets[exportIndex].label;
+				if (!saveSettings(settings, settingsFile))
+					TraceLog(LOG_WARNING, "Could not save settings: %s", settingsFile.string().c_str());
 			}
 
 			if (!shiftDown) {

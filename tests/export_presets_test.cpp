@@ -23,6 +23,12 @@ namespace {
 		EXPECT_EQ(adjustExportPresetIndex(1, 1), 2);
 	}
 
+	TEST(ExportPresetsTest, FindsIndexByLabel) {
+		EXPECT_EQ(exportPresetIndex("FHD"), 0);
+		EXPECT_EQ(exportPresetIndex("8K"), kExportPresetCount - 1);
+		EXPECT_EQ(exportPresetIndex("unknown"), 0);
+	}
+
 	TEST(ExportPresetsTest, SpanKeepsVerticalExtent) {
 		constexpr double kViewSpan = 4.0;
 		constexpr int kViewWidth = 1200;

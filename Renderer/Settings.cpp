@@ -8,6 +8,7 @@
 
 namespace {
 	constexpr const char* kLanguageKey = "language=";
+	constexpr const char* kExportPresetKey = "png=";
 	constexpr const char* kRussianValue = "ru";
 	constexpr const char* kEnglishValue = "en";
 	constexpr const char* kConfigDirectory = "MandelbrotFractalGeneration";
@@ -49,22 +50,27 @@ Settings parseSettings(const std::string& text) {
 		if (!line.empty() && line.back() == '\r')
 			line.pop_back();
 
-		if (!line.starts_with(kLanguageKey))
-			continue;
-
-		const std::string value = line.substr(std::string(kLanguageKey).size());
-		if (value == kRussianValue)
-			settings.language = Language::Russian;
-		else if (value == kEnglishValue)
-			settings.language = Language::English;
+		if (line.starts_with(kLanguageKey)) {
+			const std::string value = line.substr(std::string(kLanguageKey).size());
+			if (value == kRussianValue)
+				settings.language = Language::Russian;
+			else if (value == kEnglishValue)
+				settings.language = Language::English;
+		} else if (line.starts_with(kExportPresetKey)) {
+			const std::string value = line.substr(std::string(kExportPresetKey).size());
+			if (!value.empty())
+				settings.exportPreset = value;
+		}
 	}
 
 	return settings;
 }
 
 std::string formatSettings(const Settings& settings) {
-	const char* value = settings.language == Language::English ? kEnglishValue : kRussianValue;
-	return std::string(kLanguageKey) + value + "\n";
+	const char* language = settings.language == Language::English ? kEnglishValue : kRussianValue;
+	std::string text = std::string(kLanguageKey) + language + "\n";
+	text += std::string(kExportPresetKey) + settings.exportPreset + "\n";
+	return text;
 }
 
 Settings loadSettings(const std::filesystem::path& path) {

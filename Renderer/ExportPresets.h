@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iterator>
+#include <string>
 
 // Разрешение экспортируемого PNG, не зависящее от размера окна.
 struct ExportPreset {
@@ -18,6 +19,15 @@ inline constexpr ExportPreset kExportPresets[] = {
 };
 
 inline constexpr int kExportPresetCount = static_cast<int>(std::size(kExportPresets));
+
+// Возвращает индекс пресета по метке или 0, если метка неизвестна.
+inline int exportPresetIndex(const std::string& label) {
+	for (int i = 0; i < kExportPresetCount; ++i) {
+		if (label == kExportPresets[i].label)
+			return i;
+	}
+	return 0;
+}
 
 // Сдвигает индекс пресета по кругу.
 inline int adjustExportPresetIndex(int index, int delta) {

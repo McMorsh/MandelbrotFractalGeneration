@@ -8,6 +8,8 @@
 // Настройки интерфейса, которые сохраняются между запусками.
 struct Settings {
 	Language language = Language::Russian;
+	// Метка пресета PNG, по умолчанию совпадает с FHD
+	std::string exportPreset = "FHD";
 };
 
 // Возвращает путь к файлу настроек пользователя.

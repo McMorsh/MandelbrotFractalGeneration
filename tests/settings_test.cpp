@@ -1,3 +1,4 @@
+#include "ExportPresets.h"
 #include "Settings.h"
 
 #include <gtest/gtest.h>
@@ -29,12 +30,23 @@ namespace {
 		EXPECT_EQ(parseSettings("language=en\r\n").language, Language::English);
 	}
 
+	TEST(SettingsTest, ParsesExportPreset) {
+		EXPECT_EQ(parseSettings("png=4K\n").exportPreset, "4K");
+	}
+
+	TEST(SettingsTest, DefaultExportPresetIsKnown) {
+		EXPECT_EQ(exportPresetIndex(Settings{}.exportPreset), 0);
+	}
+
 	TEST(SettingsTest, FormatRoundTrip) {
 		Settings settings;
 		settings.language = Language::English;
+		settings.exportPreset = "8K";
 
-		EXPECT_EQ(formatSettings(settings), "language=en\n");
-		EXPECT_EQ(parseSettings(formatSettings(settings)).language, Language::English);
+		EXPECT_EQ(formatSettings(settings), "language=en\npng=8K\n");
+		const Settings parsed = parseSettings(formatSettings(settings));
+		EXPECT_EQ(parsed.language, Language::English);
+		EXPECT_EQ(parsed.exportPreset, "8K");
 	}
 
 	TEST(SettingsTest, PathPointsToSettingsFile) {
@@ -50,9 +62,12 @@ namespace {
 
 		Settings settings;
 		settings.language = Language::English;
+		settings.exportPreset = "8K";
 
 		ASSERT_TRUE(saveSettings(settings, path));
-		EXPECT_EQ(loadSettings(path).language, Language::English);
+		const Settings loaded = loadSettings(path);
+		EXPECT_EQ(loaded.language, Language::English);
+		EXPECT_EQ(loaded.exportPreset, "8K");
 
 		std::filesystem::remove(path);
 	}
