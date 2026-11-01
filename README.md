@@ -25,6 +25,7 @@
 - сохранение PNG в двойном разрешении в фоне по Shift + F2;
 - иконка окна и exe из `assets/icon.png` и `assets/icon.ico`;
 - русский и английский интерфейс на шрифте IBM Plex Mono с переключением по L;
+  выбранный язык сохраняется между запусками;
 - рендер PNG без окна с параметрами командной строки;
 - пересчёт изображения только при изменении вида, а не каждый кадр.
 
@@ -67,7 +68,11 @@ F12 обрабатывает сама raylib: она сохраняет `screens
 нажатия игнорируются, поэтому обратный шаг срабатывает сразу.
 
 Клавиша L переключает русский и английский интерфейс. Заголовок окна, HUD,
-панель подсказок и уведомления обновляются сразу.
+панель подсказок и уведомления обновляются сразу. Выбранный язык сохраняется в
+`settings.txt`: Windows - `%APPDATA%\MandelbrotFractalGeneration\settings.txt`,
+Linux - `$XDG_CONFIG_HOME/MandelbrotFractalGeneration/settings.txt` или
+`~/.config/MandelbrotFractalGeneration/settings.txt`. Если файл удалить, при
+следующем запуске снова будет русский.
 
 Окно можно потянуть за край или угол, минимальный размер 640x480. Фрактал
 пересчитывается под новый размер, центр и масштаб сохраняются.
@@ -218,8 +223,9 @@ ctest --test-dir build --output-on-failure
 | `Renderer/ImageExportWorker.h`, `Renderer/ImageExportWorker.cpp` | Фоновый экспорт PNG в двойном разрешении |
 | `Renderer/Localization.h`, `Renderer/Localization.cpp` | Строки русского и английского интерфейса |
 | `Renderer/RenderWorker.h`, `Renderer/RenderWorker.cpp` | Фоновый расчёт кадров |
+| `Renderer/Settings.h`, `Renderer/Settings.cpp` | Сохранение и чтение настроек интерфейса |
 | `main.cpp` | CLI, обработка ввода и главный цикл |
-| `tests/` | Тесты GoogleTest для `Fractal`, `Iterations`, `ColorMap`, `View`, `ViewSnapshot`, `ImageRender` и `Localization` |
+| `tests/` | Тесты GoogleTest для `Fractal`, `Iterations`, `ColorMap`, `View`, `ViewSnapshot`, `ImageRender`, `Localization` и `Settings` |
 | `assets/` | Иконки, шрифт IBM Plex Mono и текст лицензии OFL |
 | `docs/` | Изображения для README |
 

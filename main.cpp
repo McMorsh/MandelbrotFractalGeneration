@@ -5,6 +5,7 @@
 #include "Iterations.h"
 #include "Localization.h"
 #include "RenderWorker.h"
+#include "Settings.h"
 #include "View.h"
 #include "ViewSnapshot.h"
 
@@ -18,6 +19,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
+#include <filesystem>
 #include <string>
 #include <thread>
 #include <utility>
@@ -206,7 +208,9 @@ namespace {
 	}
 
 	int runGui() {
-		Language language = Language::Russian;
+		const std::filesystem::path settingsFile = settingsPath();
+		Settings settings = loadSettings(settingsFile);
+		Language language = settings.language;
 		FractalRender renderer(kWindowWidth, kWindowHeight, uiText(language).windowTitle);
 		renderer.setLanguage(language);
 		const UiText* ui = &uiText(language);
@@ -487,6 +491,9 @@ namespace {
 
 			if (IsKeyPressed(KEY_L)) {
 				language = nextLanguage(language);
+				settings.language = language;
+				if (!saveSettings(settings, settingsFile))
+					TraceLog(LOG_WARNING, "Could not save settings: %s", settingsFile.string().c_str());
 				ui = &uiText(language);
 				renderer.setLanguage(language);
 				notice.clear();

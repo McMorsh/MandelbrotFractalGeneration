@@ -64,6 +64,7 @@ add_executable(MandelbrotFractalGeneration
         Renderer/ImageRender.cpp
         Renderer/Localization.cpp
         Renderer/RenderWorker.cpp
+        Renderer/Settings.cpp
         ColorMap/ColorMap.cpp)
 
 target_include_directories(MandelbrotFractalGeneration PRIVATE
@@ -115,6 +116,7 @@ if(BUILD_TESTING)
             tests/image_render_test.cpp
             tests/iterations_test.cpp
             tests/localization_test.cpp
+            tests/settings_test.cpp
             tests/view_test.cpp
             tests/view_snapshot_test.cpp
             FractalCore/Fractal.cpp
@@ -123,7 +125,8 @@ if(BUILD_TESTING)
             FractalCore/ViewSnapshot.cpp
             ColorMap/ColorMap.cpp
             Renderer/ImageRender.cpp
-            Renderer/Localization.cpp)
+            Renderer/Localization.cpp
+            Renderer/Settings.cpp)
 
     target_include_directories(mandelbrot_tests PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/FractalCore
