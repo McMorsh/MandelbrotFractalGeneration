@@ -52,6 +52,10 @@ namespace {
 		EXPECT_DOUBLE_EQ(settings.fractal.juliaImag, 0.6);
 	}
 
+	TEST(SettingsTest, ParsesBurningShip) {
+		EXPECT_EQ(parseSettings("fractal=burningship\n").fractal.type, FractalType::BurningShip);
+	}
+
 	TEST(SettingsTest, DefaultsToMandelbrotParameters) {
 		const Settings settings;
 

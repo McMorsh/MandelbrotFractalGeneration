@@ -30,7 +30,10 @@
 namespace {
 	constexpr int kWindowWidth = 1200;
 	constexpr int kWindowHeight = 800;
-	constexpr double kJuliaHomeSpan = 4.0;
+	constexpr double kJuliaInitialSpan = 4.0;
+	constexpr double kBurningShipInitialCenterX = -0.5;
+	constexpr double kBurningShipInitialCenterY = 0.5;
+	constexpr double kBurningShipInitialSpan = 4.0;
 
 	constexpr double kIterationRepeatDelay = 0.15;
 
@@ -79,10 +82,17 @@ namespace {
 		return buffer;
 	}
 
-	// Домашний вид зависит от фрактала: Julia симметричен относительно нуля
-	View homeView(FractalType type, int width, int height) {
-		if (type == FractalType::Julia)
-			return View(0.0, 0.0, kJuliaHomeSpan, width, height);
+	// Начальный вид: Julia в нуле, Burning Ship около (-0.5, 0.5)
+	View initialView(FractalType type, int width, int height) {
+		switch (type) {
+			case FractalType::Julia:
+				return View(0.0, 0.0, kJuliaInitialSpan, width, height);
+			case FractalType::BurningShip:
+				return View(kBurningShipInitialCenterX, kBurningShipInitialCenterY, kBurningShipInitialSpan, width,
+							height);
+			case FractalType::Mandelbrot:
+				break;
+		}
 		return View(width, height);
 	}
 
@@ -144,7 +154,7 @@ namespace {
 					"      --center <re> <im>    view center (default -0.6 0)\n"
 					"      --span <value>        view width in complex units (default 3.5)\n"
 					"      --palette <name>      Ember, Ocean or Mono (default Ember)\n"
-					"      --fractal <name>      mandelbrot or julia (default mandelbrot)\n"
+					"      --fractal <name>      mandelbrot, julia or burningship (default mandelbrot)\n"
 					"  -h, --help                show this help\n",
 					program);
 	}
@@ -238,7 +248,7 @@ namespace {
 		colormap.setPalette(settings.palette);
 		settings.palette = colormap.paletteName();
 		setWindowIcon();
-		View view = homeView(fractal.type, renderer.getWidth(), renderer.getHeight());
+		View view = initialView(fractal.type, renderer.getWidth(), renderer.getHeight());
 		const unsigned int hardwareThreads = std::max(1u, std::thread::hardware_concurrency());
 		const int totalThreads = std::max(2, static_cast<int>(hardwareThreads) - 1);
 		const int exportThreads = std::max(1, totalThreads / 4);
@@ -533,11 +543,12 @@ namespace {
 			}
 
 			if (IsKeyPressed(KEY_R)) {
-				const View home = homeView(fractal.type, view.getWidth(), view.getHeight());
-				const bool atHome = sameView(view, home) && iterationBonus == 0;
-				const bool homeRequested = hasRequest && sameView(lastRequestedView, home) && lastRequestedBonus == 0;
-				if (!atHome || !homeRequested) {
-					view = home;
+				const View initial = initialView(fractal.type, view.getWidth(), view.getHeight());
+				const bool atInitial = sameView(view, initial) && iterationBonus == 0;
+				const bool initialRequested =
+					hasRequest && sameView(lastRequestedView, initial) && lastRequestedBonus == 0;
+				if (!atInitial || !initialRequested) {
+					view = initial;
 					iterationBonus = 0;
 					requestFull();
 				}

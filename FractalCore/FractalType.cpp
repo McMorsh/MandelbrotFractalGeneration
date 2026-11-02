@@ -3,7 +3,15 @@
 #include <cctype>
 
 FractalType nextFractalType(FractalType type) {
-	return type == FractalType::Mandelbrot ? FractalType::Julia : FractalType::Mandelbrot;
+	switch (type) {
+		case FractalType::Mandelbrot:
+			return FractalType::Julia;
+		case FractalType::Julia:
+			return FractalType::BurningShip;
+		case FractalType::BurningShip:
+			return FractalType::Mandelbrot;
+	}
+	return FractalType::Mandelbrot;
 }
 
 bool parseFractalType(const std::string& text, FractalType& type) {
@@ -20,10 +28,22 @@ bool parseFractalType(const std::string& text, FractalType& type) {
 		type = FractalType::Julia;
 		return true;
 	}
+	if (lower == "burningship" || lower == "burning-ship") {
+		type = FractalType::BurningShip;
+		return true;
+	}
 
 	return false;
 }
 
 const char* fractalTypeName(FractalType type) {
-	return type == FractalType::Julia ? "julia" : "mandelbrot";
+	switch (type) {
+		case FractalType::Mandelbrot:
+			return "mandelbrot";
+		case FractalType::Julia:
+			return "julia";
+		case FractalType::BurningShip:
+			return "burningship";
+	}
+	return "mandelbrot";
 }

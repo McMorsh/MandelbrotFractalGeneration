@@ -9,7 +9,7 @@ namespace {
 	constexpr int kWidth = 1200;
 	constexpr int kHeight = 800;
 
-	TEST(ViewTest, DefaultViewIsHome) {
+	TEST(ViewTest, DefaultViewMatchesInitial) {
 		const View view(kWidth, kHeight);
 
 		EXPECT_DOUBLE_EQ(view.getCenterX(), kInitialCenterX);

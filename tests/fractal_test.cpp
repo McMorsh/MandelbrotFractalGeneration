@@ -126,4 +126,40 @@ namespace {
 		EXPECT_EQ(first, second);
 	}
 
+	TEST(FractalTest, BurningShipContainsOrigin) {
+		FractalParams params;
+		params.type = FractalType::BurningShip;
+		const Fractal fractal(200, params);
+
+		EXPECT_DOUBLE_EQ(fractal.compute(0.0, 0.0), 200.0);
+	}
+
+	TEST(FractalTest, BurningShipPointOutsideEscapes) {
+		FractalParams params;
+		params.type = FractalType::BurningShip;
+		const Fractal fractal(200, params);
+
+		EXPECT_LT(fractal.compute(3.0, 0.0), 5.0);
+	}
+
+	TEST(FractalTest, BurningShipDiffersFromMandelbrot) {
+		FractalParams params;
+		params.type = FractalType::BurningShip;
+		const Fractal burningShip(200, params);
+		const Fractal mandelbrot(200);
+
+		EXPECT_DOUBLE_EQ(mandelbrot.compute(-0.5, -0.5), 200.0);
+		EXPECT_LT(burningShip.compute(-0.5, -0.5), 10.0);
+	}
+
+	TEST(FractalTest, BurningShipGenerateIsDeterministic) {
+		FractalParams params;
+		params.type = FractalType::BurningShip;
+		const Fractal fractal(100, params);
+		const std::vector<double> first = fractal.generate(32, 24, -0.5, -0.5, 3.5);
+		const std::vector<double> second = fractal.generate(32, 24, -0.5, -0.5, 3.5);
+
+		EXPECT_EQ(first, second);
+	}
+
 } // namespace

@@ -15,6 +15,8 @@ namespace {
 		EXPECT_EQ(type, FractalType::Mandelbrot);
 		ASSERT_TRUE(parseFractalType("julia", type));
 		EXPECT_EQ(type, FractalType::Julia);
+		ASSERT_TRUE(parseFractalType("burningship", type));
+		EXPECT_EQ(type, FractalType::BurningShip);
 	}
 
 	TEST(FractalTypeTest, ParsesNamesCaseInsensitive) {
@@ -22,6 +24,8 @@ namespace {
 
 		ASSERT_TRUE(parseFractalType("JULIA", type));
 		EXPECT_EQ(type, FractalType::Julia);
+		ASSERT_TRUE(parseFractalType("Burning-Ship", type));
+		EXPECT_EQ(type, FractalType::BurningShip);
 	}
 
 	TEST(FractalTypeTest, RejectsUnknownName) {
@@ -34,12 +38,14 @@ namespace {
 
 	TEST(FractalTypeTest, NextTypeCycles) {
 		EXPECT_EQ(nextFractalType(FractalType::Mandelbrot), FractalType::Julia);
-		EXPECT_EQ(nextFractalType(FractalType::Julia), FractalType::Mandelbrot);
+		EXPECT_EQ(nextFractalType(FractalType::Julia), FractalType::BurningShip);
+		EXPECT_EQ(nextFractalType(FractalType::BurningShip), FractalType::Mandelbrot);
 	}
 
 	TEST(FractalTypeTest, NamesMatchCli) {
 		EXPECT_STREQ(fractalTypeName(FractalType::Mandelbrot), "mandelbrot");
 		EXPECT_STREQ(fractalTypeName(FractalType::Julia), "julia");
+		EXPECT_STREQ(fractalTypeName(FractalType::BurningShip), "burningship");
 	}
 
 } // namespace

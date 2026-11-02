@@ -26,6 +26,10 @@ namespace {
 					 fractalTitle(FractalType::Julia, Language::English));
 		EXPECT_STRNE(fractalTitle(FractalType::Mandelbrot, Language::Russian),
 					 fractalTitle(FractalType::Julia, Language::Russian));
+		EXPECT_STRNE(fractalTitle(FractalType::BurningShip, Language::Russian),
+					 fractalTitle(FractalType::BurningShip, Language::English));
+		EXPECT_STRNE(fractalTitle(FractalType::Mandelbrot, Language::Russian),
+					 fractalTitle(FractalType::BurningShip, Language::Russian));
 	}
 
 	TEST(LocalizationTest, HelpLinesAreComplete) {

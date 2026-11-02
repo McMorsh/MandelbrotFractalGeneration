@@ -11,8 +11,7 @@ Fractal::Fractal(int maxIterations, const FractalParams& params) : maxIterations
 }
 
 double Fractal::compute(double real, double imag) const {
-	// У Мандельброта точка задаёт c, а z стартует с нуля.
-	// У Julia наоборот: точка задаёт z0, а c фиксирован.
+	// У Мандельброта и Burning Ship c - точка, z0 = 0; у Julia наоборот.
 	std::complex<double> z;
 	std::complex<double> c;
 	if (params.type == FractalType::Julia) {
@@ -20,14 +19,24 @@ double Fractal::compute(double real, double imag) const {
 		c = {params.juliaReal, params.juliaImag};
 	} else {
 		z = {0.0, 0.0};
-		c = {real, imag};
+		// У Burning Ship мнимая часть c инвертируется для классической ориентации
+		c = {real, params.type == FractalType::BurningShip ? -imag : imag};
 	}
 	int iterations = 0;
 
-	// std::norm(z) возвращает |z|^2, поэтому корень не нужен
-	while (std::norm(z) <= 4.0 && iterations < maxIterations) {
-		z = z * z + c;
-		iterations++;
+	if (params.type == FractalType::BurningShip) {
+		// Формула: z = (|Re z| + i|Im z|)^2 + c
+		while (std::norm(z) <= 4.0 && iterations < maxIterations) {
+			z = {std::abs(z.real()), std::abs(z.imag())};
+			z = z * z + c;
+			iterations++;
+		}
+	} else {
+		// std::norm(z) возвращает |z|^2, поэтому корень не нужен
+		while (std::norm(z) <= 4.0 && iterations < maxIterations) {
+			z = z * z + c;
+			iterations++;
+		}
 	}
 
 	// Точка не успела выйти за предел, считаем её принадлежащей множеству
@@ -35,8 +44,7 @@ double Fractal::compute(double real, double imag) const {
 		return static_cast<double>(maxIterations);
 	}
 
-	// Непрерывная оценка убирает ступени между цветовыми полосами.
-	// 0.5 * log2(|z|^2) = log2(|z|), поэтому nu = log2(log2(|z|)).
+	// Непрерывная оценка убирает ступени: nu = log2(log2(|z|)).
 	const double nu = std::log2(0.5 * std::log2(std::norm(z)));
 	return iterations + 1.0 - nu;
 }

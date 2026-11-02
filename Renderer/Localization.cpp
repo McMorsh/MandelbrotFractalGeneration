@@ -86,8 +86,25 @@ const HelpLineText* helpLines(Language language) {
 }
 
 const char* fractalTitle(FractalType type, Language language) {
-	if (language == Language::Russian)
-		return type == FractalType::Julia ? "Множество Жюлиа" : "Множество Мандельброта";
+	if (language == Language::Russian) {
+		switch (type) {
+			case FractalType::Mandelbrot:
+				return "Множество Мандельброта";
+			case FractalType::Julia:
+				return "Множество Жюлиа";
+			case FractalType::BurningShip:
+				return "Горящий корабль";
+		}
+		return "Фрактал";
+	}
 
-	return type == FractalType::Julia ? "Julia Set" : "Mandelbrot Set";
+	switch (type) {
+		case FractalType::Mandelbrot:
+			return "Mandelbrot Set";
+		case FractalType::Julia:
+			return "Julia Set";
+		case FractalType::BurningShip:
+			return "Burning Ship";
+	}
+	return "Fractal";
 }
