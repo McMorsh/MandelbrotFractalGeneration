@@ -2,13 +2,13 @@
 
 #include "FractalType.h"
 
-// Язык интерфейса.
+/// Язык интерфейса.
 enum class Language {
 	Russian,
 	English,
 };
 
-// Фиксированные строки интерфейса. Форматные строки рассчитаны на snprintf.
+/// Фиксированные строки интерфейса. Форматные строки рассчитаны на snprintf.
 struct UiText {
 	const char* controlsHeader;
 	const char* infoFormat;
@@ -27,22 +27,23 @@ struct UiText {
 	const char* statusRendering;
 };
 
-// Строка панели подсказок: клавиши слева, действие справа.
+/// Строка панели подсказок: клавиши слева, действие справа.
 struct HelpLineText {
 	const char* keys;
 	const char* action;
 };
 
+/// Число строк панели подсказок.
 inline constexpr int kHelpLineCount = 12;
 
-// Возвращает название фрактала для заголовка окна и HUD.
+/// Название фрактала для заголовка окна и HUD.
 const char* fractalTitle(FractalType type, Language language);
 
-// Возвращает противоположный язык.
+/// Возвращает противоположный язык.
 Language nextLanguage(Language language);
 
-// Возвращает строки выбранного языка.
+/// Возвращает строки выбранного языка.
 const UiText& uiText(Language language);
 
-// Возвращает массив строк панели подсказок выбранного языка.
+/// Возвращает массив строк панели подсказок выбранного языка.
 const HelpLineText* helpLines(Language language);

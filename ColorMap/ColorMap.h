@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-// Преобразует сглаженное число итераций в цвет.
+/// По сглаженному числу итераций выбирает цвет пикселя.
 class ColorMap {
   private:
 	std::size_t paletteIndex = 0;
@@ -16,17 +16,17 @@ class ColorMap {
   public:
 	ColorMap();
 
-	// Переключает палитру на следующую.
+	/// Переключает палитру на следующую по кругу.
 	void nextPalette();
 
-	// Выбирает палитру по имени без учета регистра.
-	// Возвращает false, если имя неизвестно.
+	/// Выбирает палитру по имени без учёта регистра: Ember, Ocean или Mono.
+	/// @return false, если такого имени нет.
 	bool setPalette(const std::string& name);
 
-	// Имя текущей палитры.
+	/// Имя текущей палитры: Ember, Ocean или Mono.
 	const char* paletteName() const;
 
-	// iter: сглаженное число итераций.
-	// maxIter: порог, начиная с которого точка считается внутренней.
+	/// Цвет пикселя по сглаженному числу итераций.
+	/// Точки с iter >= maxIter считаются внутренними и окрашиваются в чёрный.
 	Color getColor(double iter, int maxIter) const;
 };

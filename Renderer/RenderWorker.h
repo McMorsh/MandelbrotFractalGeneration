@@ -11,9 +11,9 @@
 #include <thread>
 #include <vector>
 
-// Параметры одного кадра.
+/// Параметры одного кадра.
 struct RenderRequest {
-	// Идентификатор запроса: по нему отбрасываются устаревшие кадры
+	/// Идентификатор запроса: по нему отбрасываются устаревшие кадры.
 	std::uint64_t id = 0;
 	FractalParams fractal;
 	int width = 0;
@@ -24,7 +24,7 @@ struct RenderRequest {
 	double span = 0.0;
 };
 
-// Готовый кадр и время его расчёта.
+/// Готовый кадр и время его расчёта.
 struct RenderResult {
 	std::uint64_t id = 0;
 	int width = 0;
@@ -34,25 +34,26 @@ struct RenderResult {
 	std::vector<double> data;
 };
 
-// Считает кадры в фоновом потоке. Новый запрос заменяет ожидающий,
-// но не прерывает уже начатый расчёт.
+/// Считает кадры в фоновом потоке. Новый запрос заменяет ожидающий, но не прерывает уже начатый расчёт.
 class RenderWorker {
   public:
-	// threadLimit ограничивает число потоков OpenMP; 0 оставляет
-	// главному потоку два ядра.
+	/// Создаёт воркер и запускает фоновый поток.
+	/// @param threadLimit ограничивает число потоков OpenMP; 0 оставляет главному потоку два ядра
 	explicit RenderWorker(int threadLimit = 0);
 	~RenderWorker();
 
 	RenderWorker(const RenderWorker&) = delete;
 	RenderWorker& operator=(const RenderWorker&) = delete;
 
-	// Ставит последний запрос в очередь. Текущий расчёт доходит до конца.
+	/// Ставит последний запрос в очередь. Текущий расчёт доходит до конца.
 	void request(const RenderRequest& request);
 
-	// Забирает готовый кадр, если он есть. Не блокирует.
+	/// Забирает готовый кадр, если он есть. Не блокирует.
+	/// @param result сюда записывается кадр при успехе
+	/// @return false, если готового кадра нет.
 	bool tryTake(RenderResult& result);
 
-	// Есть ли активный или ожидающий расчёт.
+	/// Проверяет, есть ли активный или ожидающий расчёт.
 	bool isBusy() const;
 
   private:

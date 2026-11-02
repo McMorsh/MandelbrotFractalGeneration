@@ -3,11 +3,13 @@
 #include <iterator>
 #include <string>
 
-// Разрешение экспортируемого PNG, не зависящее от размера окна.
+/// Разрешение экспортируемого PNG, не зависящее от размера окна.
 struct ExportPreset {
 	int width;
 	int height;
+	/// Подпись в HUD, например "4K".
 	const char* label;
+	/// Суффикс имени файла, например "_4k".
 	const char* suffix;
 };
 
@@ -20,7 +22,8 @@ inline constexpr ExportPreset kExportPresets[] = {
 
 inline constexpr int kExportPresetCount = static_cast<int>(std::size(kExportPresets));
 
-// Возвращает индекс пресета по метке или 0, если метка неизвестна.
+/// Возвращает индекс пресета по метке.
+/// @return 0, если метка неизвестна.
 inline int exportPresetIndex(const std::string& label) {
 	for (int i = 0; i < kExportPresetCount; ++i) {
 		if (label == kExportPresets[i].label)
@@ -29,14 +32,13 @@ inline int exportPresetIndex(const std::string& label) {
 	return 0;
 }
 
-// Сдвигает индекс пресета по кругу.
+/// Сдвигает индекс пресета по кругу.
 inline int adjustExportPresetIndex(int index, int delta) {
 	const int count = kExportPresetCount;
 	return ((index + delta) % count + count) % count;
 }
 
-// Подбирает span кадра так, чтобы вертикальный охват совпал с окном.
-// Кадр при этом расширяется по горизонтали до пропорций пресета.
+/// Подбирает span так, чтобы высота кадра совпала с окном, а ширина дошла до пропорций пресета.
 inline double exportSpanFor(double viewSpan, int viewWidth, int viewHeight, const ExportPreset& preset) {
 	const double visibleHeight = viewSpan * static_cast<double>(viewHeight) / viewWidth;
 	return visibleHeight * static_cast<double>(preset.width) / preset.height;

@@ -12,7 +12,7 @@
 #include <string>
 #include <thread>
 
-// Параметры экспорта одного PNG.
+/// Параметры экспорта одного PNG.
 struct ImageExportRequest {
 	std::uint64_t id = 0;
 	FractalParams fractal;
@@ -26,32 +26,33 @@ struct ImageExportRequest {
 	ColorMap colormap;
 };
 
-// Результат экспорта: путь и признак успешной записи.
+/// Результат экспорта: путь и признак успешной записи.
 struct ImageExportResult {
 	std::uint64_t id = 0;
 	std::string path;
 	bool saved = false;
 };
 
-// Считает кадр и сохраняет PNG в фоновом потоке, чтобы главный поток
-// не блокировался на цветокоррекции и кодировании файла.
+/// Считает кадр и сохраняет PNG в фоне, чтобы главный поток не ждал расчёта и записи файла.
 class ImageExportWorker {
   public:
-	// threadLimit ограничивает число потоков OpenMP; 0 оставляет
-	// главному потоку два ядра.
+	/// Создаёт воркер и запускает фоновый поток.
+	/// @param threadLimit ограничивает число потоков OpenMP; 0 оставляет главному потоку два ядра
 	explicit ImageExportWorker(int threadLimit = 0);
 	~ImageExportWorker();
 
 	ImageExportWorker(const ImageExportWorker&) = delete;
 	ImageExportWorker& operator=(const ImageExportWorker&) = delete;
 
-	// Ставит последний запрос в очередь. Текущий экспорт доходит до конца.
+	/// Ставит последний запрос в очередь. Текущий экспорт доходит до конца.
 	void request(const ImageExportRequest& request);
 
-	// Забирает готовый результат, если он есть. Не блокирует.
+	/// Забирает готовый результат, если он есть. Не блокирует.
+	/// @param result сюда записывается результат при успехе
+	/// @return false, если готового результата нет.
 	bool tryTake(ImageExportResult& result);
 
-	// Есть ли активная или ожидающая задача.
+	/// Проверяет, есть ли активная или ожидающая задача.
 	bool isBusy() const;
 
   private:
