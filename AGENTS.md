@@ -211,19 +211,19 @@ include(CTest)
 if(BUILD_TESTING)
     find_package(GTest CONFIG REQUIRED)
 
-    add_executable(mandelbrot_tests
+    add_executable(fractal_tests
             tests/fractal_test.cpp
             tests/color_map_test.cpp
             FractalCore/Fractal.cpp
             ColorMap/ColorMap.cpp)
 
-    target_link_libraries(mandelbrot_tests PRIVATE
+    target_link_libraries(fractal_tests PRIVATE
             GTest::gtest_main
             raylib
             OpenMP::OpenMP_CXX)
 
     include(GoogleTest)
-    gtest_discover_tests(mandelbrot_tests)
+    gtest_discover_tests(fractal_tests)
 endif()
 ```
 
@@ -255,7 +255,7 @@ Windows, терминал MSYS2 UCRT64:
 ```bash
 cmake -B build-mingw -S . -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build-mingw
-./build-mingw/MandelbrotFractalGeneration.exe
+./build-mingw/FractalGeneration.exe
 ```
 
 Linux:
@@ -264,7 +264,7 @@ Linux:
 cmake -B build -S . -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_TOOLCHAIN_FILE="$HOME/vcpkg/scripts/buildsystems/vcpkg.cmake"
 cmake --build build -j
-./build/MandelbrotFractalGeneration
+./build/FractalGeneration
 ```
 
 Перед завершением задачи:

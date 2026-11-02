@@ -1,6 +1,6 @@
-# MandelbrotFractalGeneration
+# FractalGeneration
 
-[![Build](https://github.com/McMorsh/MandelbrotFractalGeneration/actions/workflows/build.yml/badge.svg)](https://github.com/McMorsh/MandelbrotFractalGeneration/actions/workflows/build.yml)
+[![Build](https://github.com/McMorsh/FractalGeneration/actions/workflows/build.yml/badge.svg)](https://github.com/McMorsh/FractalGeneration/actions/workflows/build.yml)
 
 Визуализация фракталов на C++20: множество Мандельброта и множество Жюлиа.
 Пиксели считаются параллельно через OpenMP, изображение выводится с помощью
@@ -81,11 +81,13 @@ F12 обрабатывает сама raylib: она сохраняет `screens
 
 Клавиша L переключает русский и английский интерфейс. Заголовок окна, HUD,
 панель подсказок и уведомления обновляются сразу. Выбранный язык сохраняется в
-`settings.txt`: Windows - `%APPDATA%\MandelbrotFractalGeneration\settings.txt`,
-Linux - `$XDG_CONFIG_HOME/MandelbrotFractalGeneration/settings.txt` или
-`~/.config/MandelbrotFractalGeneration/settings.txt`. Там же хранятся выбранная
+`settings.txt`: Windows - `%APPDATA%\FractalGeneration\settings.txt`,
+Linux - `$XDG_CONFIG_HOME/FractalGeneration/settings.txt` или
+`~/.config/FractalGeneration/settings.txt`. Там же хранятся выбранная
 палитра, пресет PNG, тип фрактала и параметр `c` для Julia. Если файл удалить,
 при следующем запуске снова будет русский язык, Ember, FHD и Мандельброт.
+При первом запуске после переименования настройки из старого каталога
+`MandelbrotFractalGeneration` подхватываются автоматически.
 
 Пример файла:
 
@@ -107,7 +109,7 @@ png=4K
 рендерит PNG и сразу завершается:
 
 ```bash
-./build-mingw/MandelbrotFractalGeneration.exe \
+./build-mingw/FractalGeneration.exe \
   --output mandelbrot.png \
   --width 1920 --height 1080 \
   --iterations 800 \
@@ -186,12 +188,12 @@ pacman -S --needed git mingw-w64-ucrt-x86_64-gcc \
 Сборка:
 
 ```bash
-git clone https://github.com/McMorsh/MandelbrotFractalGeneration.git
-cd MandelbrotFractalGeneration
+git clone https://github.com/McMorsh/FractalGeneration.git
+cd FractalGeneration
 
 cmake --preset mingw-release
 cmake --build --preset mingw-release
-./build-mingw/MandelbrotFractalGeneration.exe
+./build-mingw/FractalGeneration.exe
 ```
 
 Чтобы запускать exe из PowerShell или Проводника, не нужно вручную менять PATH:
@@ -203,8 +205,8 @@ CMake при сборке через MinGW сам копирует нужные 
 ### Linux
 
 ```bash
-git clone https://github.com/McMorsh/MandelbrotFractalGeneration.git
-cd MandelbrotFractalGeneration
+git clone https://github.com/McMorsh/FractalGeneration.git
+cd FractalGeneration
 
 # Зависимости raylib для Debian и Ubuntu
 sudo apt update
@@ -220,7 +222,7 @@ cmake -B build -S . -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_TOOLCHAIN_FILE="$HOME/vcpkg/scripts/buildsystems/vcpkg.cmake"
 cmake --build build -j
 
-./build/MandelbrotFractalGeneration
+./build/FractalGeneration
 ```
 
 ## Тесты

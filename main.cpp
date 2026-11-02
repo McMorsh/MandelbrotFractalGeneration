@@ -227,7 +227,7 @@ namespace {
 
 	int runGui() {
 		const std::filesystem::path settingsFile = settingsPath();
-		Settings settings = loadSettings(settingsFile);
+		Settings settings = loadSettings(settingsFile, legacySettingsPath());
 		Language language = settings.language;
 		FractalParams fractal = settings.fractal;
 		FractalRender renderer(kWindowWidth, kWindowHeight, fractalTitle(fractal.type, language));

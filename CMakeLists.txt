@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(MandelbrotFractalGeneration VERSION 1.0.0 LANGUAGES CXX)
+project(FractalGeneration VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -53,7 +53,7 @@ function(copy_mingw_runtime_dlls target)
     endforeach()
 endfunction()
 
-add_executable(MandelbrotFractalGeneration
+add_executable(FractalGeneration
         main.cpp
         FractalCore/Fractal.cpp
         FractalCore/FractalType.cpp
@@ -68,17 +68,17 @@ add_executable(MandelbrotFractalGeneration
         Renderer/Settings.cpp
         ColorMap/ColorMap.cpp)
 
-target_include_directories(MandelbrotFractalGeneration PRIVATE
+target_include_directories(FractalGeneration PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/FractalCore
         ${CMAKE_CURRENT_SOURCE_DIR}/ColorMap
         ${CMAKE_CURRENT_SOURCE_DIR}/Renderer)
 
-target_link_libraries(MandelbrotFractalGeneration PRIVATE
+target_link_libraries(FractalGeneration PRIVATE
         raylib
         OpenMP::OpenMP_CXX
         Threads::Threads)
 
-enable_project_warnings(MandelbrotFractalGeneration)
+enable_project_warnings(FractalGeneration)
 
 if(WIN32)
     # Иконка самого exe в Проводнике
@@ -86,32 +86,32 @@ if(WIN32)
     set_source_files_properties(${APP_ICON_RC} PROPERTIES
             COMPILE_FLAGS "-I\"${CMAKE_CURRENT_SOURCE_DIR}/assets\""
             OBJECT_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/assets/icon.ico")
-    target_sources(MandelbrotFractalGeneration PRIVATE ${APP_ICON_RC})
+    target_sources(FractalGeneration PRIVATE ${APP_ICON_RC})
 endif()
 
 # Иконка окна загружается из assets/icon.png рядом с exe
-add_custom_command(TARGET MandelbrotFractalGeneration POST_BUILD
+add_custom_command(TARGET FractalGeneration POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory
-                "$<TARGET_FILE_DIR:MandelbrotFractalGeneration>/assets"
+                "$<TARGET_FILE_DIR:FractalGeneration>/assets"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${CMAKE_CURRENT_SOURCE_DIR}/assets/icon.png"
-                "$<TARGET_FILE_DIR:MandelbrotFractalGeneration>/assets/icon.png"
+                "$<TARGET_FILE_DIR:FractalGeneration>/assets/icon.png"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${CMAKE_CURRENT_SOURCE_DIR}/assets/IBMPlexMono-Regular.ttf"
-                "$<TARGET_FILE_DIR:MandelbrotFractalGeneration>/assets/IBMPlexMono-Regular.ttf"
+                "$<TARGET_FILE_DIR:FractalGeneration>/assets/IBMPlexMono-Regular.ttf"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${CMAKE_CURRENT_SOURCE_DIR}/assets/OFL.txt"
-                "$<TARGET_FILE_DIR:MandelbrotFractalGeneration>/assets/OFL.txt"
+                "$<TARGET_FILE_DIR:FractalGeneration>/assets/OFL.txt"
         COMMENT "Copying assets")
 
-copy_mingw_runtime_dlls(MandelbrotFractalGeneration)
+copy_mingw_runtime_dlls(FractalGeneration)
 
 include(CTest)
 
 if(BUILD_TESTING)
     find_package(GTest CONFIG REQUIRED)
 
-    add_executable(mandelbrot_tests
+    add_executable(fractal_tests
             tests/fractal_test.cpp
             tests/fractal_type_test.cpp
             tests/color_map_test.cpp
@@ -132,19 +132,19 @@ if(BUILD_TESTING)
             Renderer/Localization.cpp
             Renderer/Settings.cpp)
 
-    target_include_directories(mandelbrot_tests PRIVATE
+    target_include_directories(fractal_tests PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/FractalCore
             ${CMAKE_CURRENT_SOURCE_DIR}/ColorMap
             ${CMAKE_CURRENT_SOURCE_DIR}/Renderer)
 
-    target_link_libraries(mandelbrot_tests PRIVATE
+    target_link_libraries(fractal_tests PRIVATE
             GTest::gtest_main
             raylib
             OpenMP::OpenMP_CXX)
 
-    enable_project_warnings(mandelbrot_tests)
-    copy_mingw_runtime_dlls(mandelbrot_tests libgtest.dll libgtest_main.dll)
+    enable_project_warnings(fractal_tests)
+    copy_mingw_runtime_dlls(fractal_tests libgtest.dll libgtest_main.dll)
 
     include(GoogleTest)
-    gtest_discover_tests(mandelbrot_tests DISCOVERY_MODE PRE_TEST)
+    gtest_discover_tests(fractal_tests DISCOVERY_MODE PRE_TEST)
 endif()

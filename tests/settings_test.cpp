@@ -96,6 +96,13 @@ namespace {
 		const std::filesystem::path path = settingsPath();
 
 		EXPECT_EQ(path.filename().string(), "settings.txt");
+		EXPECT_EQ(path.parent_path().filename().string(), "FractalGeneration");
+	}
+
+	TEST(SettingsTest, LegacySettingsPathPointsToOldDirectory) {
+		const std::filesystem::path path = legacySettingsPath();
+
+		EXPECT_EQ(path.filename().string(), "settings.txt");
 		EXPECT_EQ(path.parent_path().filename().string(), "MandelbrotFractalGeneration");
 	}
 
@@ -139,6 +146,51 @@ namespace {
 
 		ASSERT_TRUE(saveSettings(Settings{}, path));
 		EXPECT_TRUE(std::filesystem::exists(path));
+
+		std::filesystem::remove_all(root);
+	}
+
+	TEST(SettingsTest, MigratesLegacyFile) {
+		const std::filesystem::path root = std::filesystem::temp_directory_path() / "fractal_settings_migration_test";
+		std::filesystem::remove_all(root);
+		const std::filesystem::path legacy = root / "legacy" / "settings.txt";
+		const std::filesystem::path current = root / "current" / "settings.txt";
+
+		Settings old;
+		old.language = Language::English;
+		old.palette = "Ocean";
+		old.fractal.type = FractalType::Julia;
+		old.fractal.juliaReal = -0.4;
+		old.fractal.juliaImag = 0.6;
+		old.exportPreset = "8K";
+		ASSERT_TRUE(saveSettings(old, legacy));
+
+		const Settings migrated = loadSettings(current, legacy);
+		EXPECT_EQ(migrated.language, Language::English);
+		EXPECT_EQ(migrated.palette, "Ocean");
+		EXPECT_EQ(migrated.fractal.type, FractalType::Julia);
+		EXPECT_DOUBLE_EQ(migrated.fractal.juliaReal, -0.4);
+		EXPECT_DOUBLE_EQ(migrated.fractal.juliaImag, 0.6);
+		EXPECT_EQ(migrated.exportPreset, "8K");
+		EXPECT_TRUE(std::filesystem::exists(current));
+
+		std::filesystem::remove_all(root);
+	}
+
+	TEST(SettingsTest, CurrentFileWinsOverLegacy) {
+		const std::filesystem::path root = std::filesystem::temp_directory_path() / "fractal_settings_priority_test";
+		std::filesystem::remove_all(root);
+		const std::filesystem::path legacy = root / "legacy" / "settings.txt";
+		const std::filesystem::path current = root / "current" / "settings.txt";
+
+		Settings old;
+		old.language = Language::English;
+		Settings fresh;
+		fresh.language = Language::Russian;
+		ASSERT_TRUE(saveSettings(old, legacy));
+		ASSERT_TRUE(saveSettings(fresh, current));
+
+		EXPECT_EQ(loadSettings(current, legacy).language, Language::Russian);
 
 		std::filesystem::remove_all(root);
 	}

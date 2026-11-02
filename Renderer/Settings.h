@@ -17,10 +17,14 @@ struct Settings {
 };
 
 // Возвращает путь к файлу настроек пользователя.
-// Windows: %APPDATA%\MandelbrotFractalGeneration\settings.txt.
-// Linux: $XDG_CONFIG_HOME/MandelbrotFractalGeneration/settings.txt,
-// иначе ~/.config/MandelbrotFractalGeneration/settings.txt.
+// Windows: %APPDATA%\FractalGeneration\settings.txt.
+// Linux: $XDG_CONFIG_HOME/FractalGeneration/settings.txt,
+// иначе ~/.config/FractalGeneration/settings.txt.
 std::filesystem::path settingsPath();
+
+// Путь к настройкам до переименования проекта.
+// Нужен, чтобы перенести файл при первом запуске.
+std::filesystem::path legacySettingsPath();
 
 // Разбирает содержимое файла настроек.
 // Неизвестные ключи и значения пропускаются.
@@ -31,6 +35,9 @@ std::string formatSettings(const Settings& settings);
 
 // Читает настройки. Если файла нет, возвращает значения по умолчанию.
 Settings loadSettings(const std::filesystem::path& path);
+
+// Читает настройки. Если файла нет, пробует legacyPath и переносит его.
+Settings loadSettings(const std::filesystem::path& path, const std::filesystem::path& legacyPath);
 
 // Записывает настройки, создавая каталог при необходимости.
 // Возвращает false, если файл не удалось создать или записать.

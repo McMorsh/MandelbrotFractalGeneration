@@ -18,7 +18,8 @@ namespace {
 	constexpr const char* kExportPresetKey = "png=";
 	constexpr const char* kRussianValue = "ru";
 	constexpr const char* kEnglishValue = "en";
-	constexpr const char* kConfigDirectory = "MandelbrotFractalGeneration";
+	constexpr const char* kConfigDirectory = "FractalGeneration";
+	constexpr const char* kLegacyConfigDirectory = "MandelbrotFractalGeneration";
 	constexpr const char* kSettingsFileName = "settings.txt";
 
 	std::filesystem::path currentDirectory() {
@@ -62,6 +63,10 @@ namespace {
 
 std::filesystem::path settingsPath() {
 	return configRoot() / kConfigDirectory / kSettingsFileName;
+}
+
+std::filesystem::path legacySettingsPath() {
+	return configRoot() / kLegacyConfigDirectory / kSettingsFileName;
 }
 
 Settings parseSettings(const std::string& text) {
@@ -123,6 +128,17 @@ Settings loadSettings(const std::filesystem::path& path) {
 	std::ostringstream text;
 	text << file.rdbuf();
 	return parseSettings(text.str());
+}
+
+Settings loadSettings(const std::filesystem::path& path, const std::filesystem::path& legacyPath) {
+	std::error_code error;
+	if (!std::filesystem::exists(path, error) && std::filesystem::exists(legacyPath, error)) {
+		const Settings settings = loadSettings(legacyPath);
+		saveSettings(settings, path);
+		return settings;
+	}
+
+	return loadSettings(path);
 }
 
 bool saveSettings(const Settings& settings, const std::filesystem::path& path) {
