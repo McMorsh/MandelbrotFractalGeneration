@@ -290,6 +290,7 @@ ctest --test-dir build --output-on-failure
 | `Renderer/ExportPresets.h` | Пресеты разрешения FHD, 2K, 4K и 8K |
 | `Renderer/FractalRender.h`, `Renderer/FractalRender.cpp` | Окно, текстура и экранный интерфейс |
 | `Renderer/ImageRender.h`, `Renderer/ImageRender.cpp` | Рендер и сохранение PNG без окна |
+| `Renderer/RenderSettings.h` | Общие параметры кадра для оконного и headless-рендера |
 | `Renderer/ImageExportWorker.h`, `Renderer/ImageExportWorker.cpp` | Фоновый экспорт PNG в выбранном разрешении |
 | `Renderer/Localization.h`, `Renderer/Localization.cpp` | Строки русского и английского интерфейса |
 | `Renderer/RenderWorker.h`, `Renderer/RenderWorker.cpp` | Фоновый расчёт кадров |

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ColorMap.h"
-#include "FractalType.h"
+#include "RenderSettings.h"
 
 #include <atomic>
 #include <condition_variable>
@@ -15,13 +15,7 @@
 /// Параметры экспорта одного PNG.
 struct ImageExportRequest {
 	std::uint64_t id = 0;
-	FractalParams fractal;
-	int width = 0;
-	int height = 0;
-	int maxIterations = 0;
-	double centerX = 0.0;
-	double centerY = 0.0;
-	double span = 0.0;
+	RenderSettings settings;
 	std::string path;
 	ColorMap colormap;
 };

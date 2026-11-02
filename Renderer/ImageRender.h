@@ -1,23 +1,12 @@
 #pragma once
 
 #include "ColorMap.h"
-#include "FractalType.h"
+#include "RenderSettings.h"
 #include <string>
 #include <vector>
 
 /// Максимальный размер стороны изображения в пикселях.
 inline constexpr int kMaxImageDimension = 8192;
-
-/// Параметры кадра для рендера без окна.
-struct RenderSettings {
-	int width = 1200;
-	int height = 800;
-	int maxIterations = 0;
-	FractalParams fractal;
-	double centerX = -0.6;
-	double centerY = 0.0;
-	double span = 3.5;
-};
 
 /// Проверяет размеры, число итераций, span, центр и параметры фрактала.
 bool isValidRenderSettings(const RenderSettings& settings);

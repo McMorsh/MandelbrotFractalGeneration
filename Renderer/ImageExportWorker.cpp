@@ -71,13 +71,14 @@ void ImageExportWorker::run(std::stop_token stopToken) {
 
 		busy.store(true, std::memory_order_relaxed);
 
-		const Fractal fractal(request.maxIterations, request.fractal);
-		const std::vector<double> data =
-			fractal.generate(request.width, request.height, request.centerX, request.centerY, request.span, stopToken);
+		const RenderSettings& settings = request.settings;
+		const Fractal fractal(settings.maxIterations, settings.fractal);
+		const std::vector<double> data = fractal.generate(settings.width, settings.height, settings.centerX,
+														  settings.centerY, settings.span, stopToken);
 
 		bool saved = false;
 		if (!stopToken.stop_requested() && !data.empty()) {
-			saved = saveIterationImage(request.path, data, request.width, request.height, request.maxIterations,
+			saved = saveIterationImage(request.path, data, settings.width, settings.height, settings.maxIterations,
 									   request.colormap);
 		}
 

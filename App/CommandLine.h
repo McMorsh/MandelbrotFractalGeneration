@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ImageRender.h"
+#include "RenderSettings.h"
 
 #include <string>
 

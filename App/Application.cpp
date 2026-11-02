@@ -7,6 +7,7 @@
 #include "ImageExportWorker.h"
 #include "Iterations.h"
 #include "Localization.h"
+#include "RenderSettings.h"
 #include "RenderWorker.h"
 #include "Settings.h"
 #include "View.h"
@@ -443,16 +444,23 @@ void Application::handleExportResult() {
 	exportState.requestId = 0;
 }
 
+RenderSettings Application::makeRenderSettings(int width, int height, double span) const {
+	RenderSettings settings;
+	settings.width = width;
+	settings.height = height;
+	// Итерации по экранному span: экспорт шире окна, но детали центра не должны теряться.
+	settings.maxIterations = iterationsForView(view.getSpan(), iterationBonus);
+	settings.fractal = fractal;
+	settings.centerX = view.getCenterX();
+	settings.centerY = view.getCenterY();
+	settings.span = span;
+	return settings;
+}
+
 void Application::submitRender(int width, int height, bool full) {
 	RenderRequest request;
 	request.id = renderState.nextRequestId++;
-	request.fractal = fractal;
-	request.width = width;
-	request.height = height;
-	request.maxIterations = iterationsForView(view.getSpan(), iterationBonus);
-	request.centerX = view.getCenterX();
-	request.centerY = view.getCenterY();
-	request.span = view.getSpan();
+	request.settings = makeRenderSettings(width, height, view.getSpan());
 	renderWorker.request(request);
 
 	if (full)
@@ -491,14 +499,7 @@ void Application::requestPresetExport() {
 
 	ImageExportRequest request;
 	request.id = renderState.nextRequestId++;
-	request.fractal = fractal;
-	request.width = preset.width;
-	request.height = preset.height;
-	// Итерации по экранному span, чтобы экспорт не терял детали центра
-	request.maxIterations = iterationsForView(view.getSpan(), iterationBonus);
-	request.centerX = view.getCenterX();
-	request.centerY = view.getCenterY();
-	request.span = exportSpan;
+	request.settings = makeRenderSettings(preset.width, preset.height, exportSpan);
 	request.path = screenshotPath(fractalTypeName(fractal.type), preset.suffix);
 	request.colormap = colormap;
 

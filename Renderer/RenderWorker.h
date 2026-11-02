@@ -1,6 +1,6 @@
 #pragma once
 
-#include "FractalType.h"
+#include "RenderSettings.h"
 
 #include <atomic>
 #include <condition_variable>
@@ -15,13 +15,7 @@
 struct RenderRequest {
 	/// Идентификатор запроса: по нему отбрасываются устаревшие кадры.
 	std::uint64_t id = 0;
-	FractalParams fractal;
-	int width = 0;
-	int height = 0;
-	int maxIterations = 0;
-	double centerX = 0.0;
-	double centerY = 0.0;
-	double span = 0.0;
+	RenderSettings settings;
 };
 
 /// Готовый кадр и время его расчёта.

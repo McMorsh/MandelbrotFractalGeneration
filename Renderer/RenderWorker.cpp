@@ -70,10 +70,11 @@ void RenderWorker::run(std::stop_token stopToken) {
 
 		busy.store(true, std::memory_order_relaxed);
 
-		const Fractal fractal(request.maxIterations, request.fractal);
+		const RenderSettings& settings = request.settings;
+		const Fractal fractal(settings.maxIterations, settings.fractal);
 		const auto start = std::chrono::steady_clock::now();
-		std::vector<double> data =
-			fractal.generate(request.width, request.height, request.centerX, request.centerY, request.span, stopToken);
+		std::vector<double> data = fractal.generate(settings.width, settings.height, settings.centerX, settings.centerY,
+													settings.span, stopToken);
 		const double renderMs =
 			std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count();
 
@@ -88,7 +89,7 @@ void RenderWorker::run(std::stop_token stopToken) {
 			std::lock_guard lock(mutex);
 			if (stopping)
 				return;
-			finished = RenderResult{request.id, request.width,	request.height, request.maxIterations,
+			finished = RenderResult{request.id, settings.width, settings.height, settings.maxIterations,
 									renderMs,	std::move(data)};
 		}
 	}

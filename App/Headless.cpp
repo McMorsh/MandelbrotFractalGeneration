@@ -4,6 +4,7 @@
 #include "FractalType.h"
 #include "ImageRender.h"
 #include "Iterations.h"
+#include "RenderSettings.h"
 
 #include <cstdio>
 

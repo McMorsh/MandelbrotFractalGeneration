@@ -5,6 +5,7 @@
 #include "FractalType.h"
 #include "ImageExportWorker.h"
 #include "Localization.h"
+#include "RenderSettings.h"
 #include "RenderWorker.h"
 #include "Settings.h"
 #include "View.h"
@@ -88,6 +89,7 @@ class Application {
 	void requestFull();
 	void requestPresetExport();
 	void applyJuliaSlider(int slider, float mouseX);
+	RenderSettings makeRenderSettings(int width, int height, double span) const;
 
 	void drawFrame();
 	std::string buildInfo() const;
