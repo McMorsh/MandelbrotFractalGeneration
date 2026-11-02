@@ -45,7 +45,7 @@ namespace {
 	// На узком окне длинные строки с координатами не помещаются
 	constexpr int kWideWindowWidth = 900;
 
-	std::string screenshotPath(const char* suffix) {
+	std::string screenshotPath(const char* prefix, const char* suffix) {
 		const std::time_t now = std::time(nullptr);
 
 		std::tm local{};
@@ -55,11 +55,13 @@ namespace {
 		const bool hasTime = localtime_r(&now, &local) != nullptr;
 #endif
 
-		std::string path = "mandelbrot";
+		std::string path = prefix;
 		if (hasTime) {
-			char buffer[64];
-			if (std::strftime(buffer, sizeof(buffer), "mandelbrot_%Y%m%d_%H%M%S", &local) > 0)
-				path = buffer;
+			char stamp[32];
+			if (std::strftime(stamp, sizeof(stamp), "%Y%m%d_%H%M%S", &local) > 0) {
+				path += '_';
+				path += stamp;
+			}
 		}
 
 		path += suffix;
@@ -348,13 +350,12 @@ namespace {
 			request.fractal = fractal;
 			request.width = preset.width;
 			request.height = preset.height;
-			// Итерации считаем по экранному span: экспорт шире окна, и от exportSpan
-			// их было бы меньше, чем на экране, из-за чего терялись бы тонкие детали
+			// Итерации по экранному span, чтобы экспорт не терял детали центра
 			request.maxIterations = iterationsForView(view.getSpan(), iterationBonus);
 			request.centerX = view.getCenterX();
 			request.centerY = view.getCenterY();
 			request.span = exportSpan;
-			request.path = screenshotPath(preset.suffix);
+			request.path = screenshotPath(fractalTypeName(fractal.type), preset.suffix);
 			request.colormap = colormap;
 
 			saveRequestId = request.id;
