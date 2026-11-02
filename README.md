@@ -284,15 +284,18 @@ ctest --test-dir build --output-on-failure
 | `FractalCore/Iterations.h`, `FractalCore/Iterations.cpp` | Автоматическое число итераций и ручная подстройка |
 | `FractalCore/ViewSnapshot.h`, `FractalCore/ViewSnapshot.cpp` | Формат и разбор параметров вида для буфера обмена |
 | `ColorMap/ColorMap.h`, `ColorMap/ColorMap.cpp` | Палитры и преобразование итераций в цвет |
+| `App/CommandLine.h`, `App/CommandLine.cpp` | Разбор аргументов командной строки и справка |
+| `App/Headless.h`, `App/Headless.cpp` | Рендер PNG без окна |
+| `App/Application.h`, `App/Application.cpp` | Главный цикл, ввод, предпросмотр и экспорт |
 | `Renderer/ExportPresets.h` | Пресеты разрешения FHD, 2K, 4K и 8K |
-| `Renderer/FractalRender.h`, `Renderer/FractalRender.cpp` | Окно, текстура, интерфейс и экспорт PNG |
+| `Renderer/FractalRender.h`, `Renderer/FractalRender.cpp` | Окно, текстура и экранный интерфейс |
 | `Renderer/ImageRender.h`, `Renderer/ImageRender.cpp` | Рендер и сохранение PNG без окна |
 | `Renderer/ImageExportWorker.h`, `Renderer/ImageExportWorker.cpp` | Фоновый экспорт PNG в выбранном разрешении |
 | `Renderer/Localization.h`, `Renderer/Localization.cpp` | Строки русского и английского интерфейса |
 | `Renderer/RenderWorker.h`, `Renderer/RenderWorker.cpp` | Фоновый расчёт кадров |
 | `Renderer/Settings.h`, `Renderer/Settings.cpp` | Сохранение и чтение настроек интерфейса |
-| `main.cpp` | CLI, обработка ввода и главный цикл |
-| `tests/` | Тесты GoogleTest для `Fractal`, `FractalType`, `Iterations`, `ColorMap`, `View`, `ViewSnapshot`, `ImageRender`, `ExportPresets`, `Localization` и `Settings` |
+| `main.cpp` | Точка входа: разбор режима и запуск приложения |
+| `tests/` | Тесты GoogleTest для `CommandLine`, `Fractal`, `FractalType`, `Iterations`, `ColorMap`, `View`, `ViewSnapshot`, `ImageRender`, `ExportPresets`, `Localization` и `Settings` |
 | `assets/` | Иконки, шрифт IBM Plex Mono и текст лицензии OFL |
 | `docs/` | Изображения для README |
 

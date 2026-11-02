@@ -55,6 +55,9 @@ endfunction()
 
 add_executable(FractalGeneration
         main.cpp
+        App/Application.cpp
+        App/CommandLine.cpp
+        App/Headless.cpp
         FractalCore/Fractal.cpp
         FractalCore/FractalType.cpp
         FractalCore/Iterations.cpp
@@ -69,6 +72,7 @@ add_executable(FractalGeneration
         ColorMap/ColorMap.cpp)
 
 target_include_directories(FractalGeneration PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/App
         ${CMAKE_CURRENT_SOURCE_DIR}/FractalCore
         ${CMAKE_CURRENT_SOURCE_DIR}/ColorMap
         ${CMAKE_CURRENT_SOURCE_DIR}/Renderer)
@@ -112,6 +116,7 @@ if(BUILD_TESTING)
     find_package(GTest CONFIG REQUIRED)
 
     add_executable(fractal_tests
+            tests/command_line_test.cpp
             tests/fractal_test.cpp
             tests/fractal_type_test.cpp
             tests/color_map_test.cpp
@@ -128,11 +133,13 @@ if(BUILD_TESTING)
             FractalCore/View.cpp
             FractalCore/ViewSnapshot.cpp
             ColorMap/ColorMap.cpp
+            App/CommandLine.cpp
             Renderer/ImageRender.cpp
             Renderer/Localization.cpp
             Renderer/Settings.cpp)
 
     target_include_directories(fractal_tests PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/App
             ${CMAKE_CURRENT_SOURCE_DIR}/FractalCore
             ${CMAKE_CURRENT_SOURCE_DIR}/ColorMap
             ${CMAKE_CURRENT_SOURCE_DIR}/Renderer)
