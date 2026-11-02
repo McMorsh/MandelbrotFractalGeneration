@@ -8,8 +8,7 @@
 namespace {
 	using Palette = std::vector<Color>;
 
-	// Замкнутые палитры: последний цвет близок к первому,
-	// поэтому при зацикливании нет видимого шва.
+	// Замкнутые палитры: последний цвет близок к первому, поэтому при зацикливании нет видимого шва.
 	const std::vector<Palette>& palettes() {
 		static const std::vector<Palette> list = {
 			{
@@ -101,8 +100,7 @@ Color ColorMap::getColor(double iter, int maxIter) const {
 	if (iter >= static_cast<double>(maxIter))
 		return BLACK;
 
-	// С ростом maxIter цикл удлиняется, иначе на глубоком зуме
-	// цветовые полосы становятся слишком частыми.
+	// С ростом maxIter цикл удлиняется, иначе на глубоком зуме цветовые полосы становятся слишком частыми.
 	const double cycle = std::max(20.0, static_cast<double>(maxIter) / 25.0);
 
 	const double t = std::max(0.0, iter) / cycle;

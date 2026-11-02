@@ -194,8 +194,7 @@ void FractalRender::draw(const std::vector<double>& data, const ColorMap& colorm
 	if (data.size() != static_cast<std::size_t>(dataWidth) * dataHeight)
 		return;
 
-	// Предпросмотр и полный кадр имеют разный размер, поэтому текстура
-	// пересоздаётся только при смене разрешения.
+	// Предпросмотр и полный кадр имеют разный размер, поэтому текстура пересоздаётся только при смене разрешения.
 	if (image.width != dataWidth || image.height != dataHeight) {
 		UnloadTexture(texture);
 		UnloadImage(image);
@@ -233,8 +232,7 @@ void FractalRender::display(const std::string& info, const std::string& details,
 	const UiText& text = uiText(language);
 	drawUiText(font, fractalTitle(fractalType, language), 24, 14, kTitleFontSize, RAYWHITE);
 
-	// Строки, которые не помещаются в узкое окно, не рисуем,
-	// иначе они вылезают за край или накладываются на счётчик FPS
+	// Длинные строки в узком окне не рисуем: они вылезают за край или накладываются на FPS
 	const int textLimit = width - 48;
 	if (measureUiText(font, info.c_str(), kHudFontSize) <= textLimit) {
 		drawUiText(font, info.c_str(), 24, 46, kHudFontSize, Fade(RAYWHITE, 0.72f));

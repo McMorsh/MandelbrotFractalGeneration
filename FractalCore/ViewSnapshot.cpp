@@ -17,8 +17,7 @@ namespace {
 		return text.substr(first, last - first + 1);
 	}
 
-	// Поле должно быть отделено пробелом, иначе "spanning tree"
-	// не считается строкой span
+	// Поле должно быть отделено пробелом, иначе "spanning tree" не считается строкой span
 	bool startsWithField(const std::string& line, const char* field) {
 		const std::size_t length = std::char_traits<char>::length(field);
 		if (line.size() <= length || line.compare(0, length, field) != 0)

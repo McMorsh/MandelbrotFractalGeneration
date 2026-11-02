@@ -371,8 +371,7 @@ namespace {
 		requestFull();
 
 		while (!WindowShouldClose()) {
-			// Окно могли растянуть или свернуть. Нулевой размер бывает
-			// у свернутого окна, такой кадр не запрашиваем.
+			// Окно могли растянуть или свернуть. Нулевой размер бывает у свернутого окна, такой кадр не запрашиваем.
 			const int screenWidth = GetScreenWidth();
 			const int screenHeight = GetScreenHeight();
 			if (screenWidth > 0 && screenHeight > 0 &&
@@ -475,8 +474,7 @@ namespace {
 			if (IsKeyDown(KEY_LEFT_BRACKET))
 				iterationDelta -= kIterationStep;
 
-			// Первое нажатие срабатывает сразу, дальше шаг повторяется,
-			// пока клавиша удерживается
+			// Первое нажатие срабатывает сразу, дальше шаг повторяется, пока клавиша удерживается
 			const bool iterationPressed = IsKeyPressed(KEY_LEFT_BRACKET) || IsKeyPressed(KEY_RIGHT_BRACKET);
 			if (iterationDelta != 0 && (iterationPressed || GetTime() >= iterationRepeatTime)) {
 				int nextBonus = 0;
@@ -498,8 +496,7 @@ namespace {
 			}
 
 			if (IsKeyPressed(KEY_C)) {
-				// Итерации считаем по текущему виду, иначе в буфер попадёт
-				// число от прошлого кадра
+				// Итерации по текущему виду, иначе в буфер попадёт число от прошлого кадра
 				const int clipboardIterations = iterationsForView(view.getSpan(), iterationBonus);
 				SetClipboardText(formatViewSnapshot(view, clipboardIterations, colormap.paletteName()).c_str());
 				notice = ui->copied;
