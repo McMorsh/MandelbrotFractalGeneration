@@ -7,9 +7,21 @@
 Fractal::Fractal(int maxIterations) : maxIterations(maxIterations) {
 }
 
+Fractal::Fractal(int maxIterations, const FractalParams& params) : maxIterations(maxIterations), params(params) {
+}
+
 double Fractal::compute(double real, double imag) const {
-	const std::complex<double> c(real, imag);
-	std::complex<double> z(0.0, 0.0);
+	// У Мандельброта точка задаёт c, а z стартует с нуля.
+	// У Julia наоборот: точка задаёт z0, а c фиксирован.
+	std::complex<double> z;
+	std::complex<double> c;
+	if (params.type == FractalType::Julia) {
+		z = {real, imag};
+		c = {params.juliaReal, params.juliaImag};
+	} else {
+		z = {0.0, 0.0};
+		c = {real, imag};
+	}
 	int iterations = 0;
 
 	// std::norm(z) возвращает |z|^2, поэтому корень не нужен

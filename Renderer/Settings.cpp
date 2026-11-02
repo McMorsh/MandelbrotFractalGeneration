@@ -1,5 +1,8 @@
 #include "Settings.h"
 
+#include <cerrno>
+#include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <sstream>
@@ -9,6 +12,9 @@
 namespace {
 	constexpr const char* kLanguageKey = "language=";
 	constexpr const char* kPaletteKey = "palette=";
+	constexpr const char* kFractalKey = "fractal=";
+	constexpr const char* kJuliaRealKey = "julia-re=";
+	constexpr const char* kJuliaImagKey = "julia-im=";
 	constexpr const char* kExportPresetKey = "png=";
 	constexpr const char* kRussianValue = "ru";
 	constexpr const char* kEnglishValue = "en";
@@ -34,6 +40,23 @@ namespace {
 #endif
 		// Переменные окружения не заданы: пишем рядом с текущим каталогом
 		return currentDirectory();
+	}
+
+	bool parseDoubleValue(const std::string& text, double& value) {
+		errno = 0;
+		char* end = nullptr;
+		const double parsed = std::strtod(text.c_str(), &end);
+		if (end == text.c_str() || *end != '\0' || errno == ERANGE || !std::isfinite(parsed))
+			return false;
+
+		value = parsed;
+		return true;
+	}
+
+	std::string formatDouble(double value) {
+		char buffer[32];
+		std::snprintf(buffer, sizeof(buffer), "%.15g", value);
+		return buffer;
 	}
 } // namespace
 
@@ -61,6 +84,16 @@ Settings parseSettings(const std::string& text) {
 			const std::string value = line.substr(std::string(kPaletteKey).size());
 			if (!value.empty())
 				settings.palette = value;
+		} else if (line.starts_with(kFractalKey)) {
+			parseFractalType(line.substr(std::string(kFractalKey).size()), settings.fractal.type);
+		} else if (line.starts_with(kJuliaRealKey)) {
+			double value = 0.0;
+			if (parseDoubleValue(line.substr(std::string(kJuliaRealKey).size()), value))
+				settings.fractal.juliaReal = value;
+		} else if (line.starts_with(kJuliaImagKey)) {
+			double value = 0.0;
+			if (parseDoubleValue(line.substr(std::string(kJuliaImagKey).size()), value))
+				settings.fractal.juliaImag = value;
 		} else if (line.starts_with(kExportPresetKey)) {
 			const std::string value = line.substr(std::string(kExportPresetKey).size());
 			if (!value.empty())
@@ -75,6 +108,9 @@ std::string formatSettings(const Settings& settings) {
 	const char* language = settings.language == Language::English ? kEnglishValue : kRussianValue;
 	std::string text = std::string(kLanguageKey) + language + "\n";
 	text += std::string(kPaletteKey) + settings.palette + "\n";
+	text += std::string(kFractalKey) + fractalTypeName(settings.fractal.type) + "\n";
+	text += std::string(kJuliaRealKey) + formatDouble(settings.fractal.juliaReal) + "\n";
+	text += std::string(kJuliaImagKey) + formatDouble(settings.fractal.juliaImag) + "\n";
 	text += std::string(kExportPresetKey) + settings.exportPreset + "\n";
 	return text;
 }

@@ -44,6 +44,30 @@ namespace {
 		EXPECT_EQ(parseSettings("png=4K\n").exportPreset, "4K");
 	}
 
+	TEST(SettingsTest, ParsesFractalSettings) {
+		const Settings settings = parseSettings("fractal=julia\njulia-re=-0.4\njulia-im=0.6\n");
+
+		EXPECT_EQ(settings.fractal.type, FractalType::Julia);
+		EXPECT_DOUBLE_EQ(settings.fractal.juliaReal, -0.4);
+		EXPECT_DOUBLE_EQ(settings.fractal.juliaImag, 0.6);
+	}
+
+	TEST(SettingsTest, DefaultsToMandelbrotParameters) {
+		const Settings settings;
+
+		EXPECT_EQ(settings.fractal.type, FractalType::Mandelbrot);
+		EXPECT_DOUBLE_EQ(settings.fractal.juliaReal, -0.8);
+		EXPECT_DOUBLE_EQ(settings.fractal.juliaImag, 0.156);
+	}
+
+	TEST(SettingsTest, IgnoresInvalidJuliaValues) {
+		const Settings settings = parseSettings("julia-re=abc\njulia-im=nan\nfractal=unknown\n");
+
+		EXPECT_EQ(settings.fractal.type, FractalType::Mandelbrot);
+		EXPECT_DOUBLE_EQ(settings.fractal.juliaReal, -0.8);
+		EXPECT_DOUBLE_EQ(settings.fractal.juliaImag, 0.156);
+	}
+
 	TEST(SettingsTest, DefaultExportPresetIsKnown) {
 		EXPECT_EQ(exportPresetIndex(Settings{}.exportPreset), 0);
 	}
@@ -52,12 +76,19 @@ namespace {
 		Settings settings;
 		settings.language = Language::English;
 		settings.palette = "Ocean";
+		settings.fractal.type = FractalType::Julia;
+		settings.fractal.juliaReal = -0.4;
+		settings.fractal.juliaImag = 0.6;
 		settings.exportPreset = "8K";
 
-		EXPECT_EQ(formatSettings(settings), "language=en\npalette=Ocean\npng=8K\n");
+		EXPECT_EQ(formatSettings(settings),
+				  "language=en\npalette=Ocean\nfractal=julia\njulia-re=-0.4\njulia-im=0.6\npng=8K\n");
 		const Settings parsed = parseSettings(formatSettings(settings));
 		EXPECT_EQ(parsed.language, Language::English);
 		EXPECT_EQ(parsed.palette, "Ocean");
+		EXPECT_EQ(parsed.fractal.type, FractalType::Julia);
+		EXPECT_DOUBLE_EQ(parsed.fractal.juliaReal, -0.4);
+		EXPECT_DOUBLE_EQ(parsed.fractal.juliaImag, 0.6);
 		EXPECT_EQ(parsed.exportPreset, "8K");
 	}
 
@@ -75,12 +106,18 @@ namespace {
 		Settings settings;
 		settings.language = Language::English;
 		settings.palette = "Ocean";
+		settings.fractal.type = FractalType::Julia;
+		settings.fractal.juliaReal = -0.4;
+		settings.fractal.juliaImag = 0.6;
 		settings.exportPreset = "8K";
 
 		ASSERT_TRUE(saveSettings(settings, path));
 		const Settings loaded = loadSettings(path);
 		EXPECT_EQ(loaded.language, Language::English);
 		EXPECT_EQ(loaded.palette, "Ocean");
+		EXPECT_EQ(loaded.fractal.type, FractalType::Julia);
+		EXPECT_DOUBLE_EQ(loaded.fractal.juliaReal, -0.4);
+		EXPECT_DOUBLE_EQ(loaded.fractal.juliaImag, 0.6);
 		EXPECT_EQ(loaded.exportPreset, "8K");
 
 		std::filesystem::remove(path);

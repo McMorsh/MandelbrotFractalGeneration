@@ -6,6 +6,14 @@
 #include <string>
 #include <vector>
 
+// Состояние панели с ползунками параметра c для Julia.
+struct JuliaControls {
+	bool visible = false;
+	double real = 0.0;
+	double imag = 0.0;
+	int activeSlider = -1;
+};
+
 // Окно raylib, текстура с фракталом и экранный интерфейс.
 class FractalRender {
   private:
@@ -15,6 +23,7 @@ class FractalRender {
 	Font font{};
 	bool customFont = false;
 	Language language = Language::Russian;
+	FractalType fractalType = FractalType::Mandelbrot;
 
   public:
 	FractalRender(int width, int height, const char* title);
@@ -44,8 +53,20 @@ class FractalRender {
 	// Выводит текстуру, строки состояния, уведомление и подсказки.
 	// status показывается рядом с FPS, showHelp включает панель.
 	void display(const std::string& info, const std::string& details, const std::string& notice,
-				 const std::string& status, bool showHelp) const;
+				 const std::string& status, bool showHelp, const JuliaControls& juliaControls) const;
+
+	// Индекс ползунка c под точкой: 0 для Re, 1 для Im, -1 если попадания нет.
+	int juliaSliderAt(float x, float y) const;
+
+	// true, если точка попадает в панель ползунков c.
+	bool juliaPanelAt(float x, float y) const;
+
+	// Значение ползунка c по координате x в диапазоне [-2, 2].
+	double juliaSliderValue(int slider, float x) const;
 
 	// Меняет язык заголовка окна и панели подсказок.
 	void setLanguage(Language language);
+
+	// Меняет тип фрактала в заголовке окна и HUD.
+	void setFractalType(FractalType type);
 };

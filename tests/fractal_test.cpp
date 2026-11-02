@@ -97,4 +97,33 @@ namespace {
 		EXPECT_TRUE(fractal.generate(64, 64, -0.6, 0.0, 3.5, source.get_token()).empty());
 	}
 
+	TEST(FractalTest, JuliaWithZeroParameterKeepsUnitDisk) {
+		FractalParams params;
+		params.type = FractalType::Julia;
+		params.juliaReal = 0.0;
+		params.juliaImag = 0.0;
+		const Fractal fractal(200, params);
+
+		EXPECT_DOUBLE_EQ(fractal.compute(0.5, 0.0), 200.0);
+		EXPECT_LT(fractal.compute(2.0, 0.0), 5.0);
+	}
+
+	TEST(FractalTest, JuliaDefaultParameterContainsOrigin) {
+		FractalParams params;
+		params.type = FractalType::Julia;
+		const Fractal fractal(200, params);
+
+		EXPECT_DOUBLE_EQ(fractal.compute(0.0, 0.0), 200.0);
+	}
+
+	TEST(FractalTest, JuliaGenerateIsDeterministic) {
+		FractalParams params;
+		params.type = FractalType::Julia;
+		const Fractal fractal(100, params);
+		const std::vector<double> first = fractal.generate(32, 24, 0.0, 0.0, 4.0);
+		const std::vector<double> second = fractal.generate(32, 24, 0.0, 0.0, 4.0);
+
+		EXPECT_EQ(first, second);
+	}
+
 } // namespace

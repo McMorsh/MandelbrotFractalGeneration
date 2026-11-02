@@ -17,6 +17,11 @@ namespace {
 	constexpr int kTitleFontSize = 24;
 	constexpr int kHudFontSize = 16;
 	constexpr float kTextSpacing = 0.0f;
+	constexpr int kJuliaPanelWidth = 340;
+	constexpr int kJuliaPanelHeight = 104;
+	constexpr int kJuliaTrackHeight = 6;
+	constexpr double kJuliaMin = -2.0;
+	constexpr double kJuliaMax = 2.0;
 
 	constexpr int kPanelHeight = kPanelPadding * 2 + 28 + kHelpLineCount * kLineHeight;
 
@@ -104,6 +109,48 @@ namespace {
 
 		return kDots;
 	}
+
+	struct JuliaLayout {
+		Rectangle panel;
+		Rectangle realTrack;
+		Rectangle imagTrack;
+	};
+
+	JuliaLayout juliaLayout(int width, int height) {
+		const float panelX = static_cast<float>(width) - kJuliaPanelWidth - 24.0f;
+		const float panelY = static_cast<float>(height) - kJuliaPanelHeight - 24.0f;
+		const float trackX = panelX + 52.0f;
+		const float trackWidth = 200.0f;
+		return {
+			{panelX, panelY, static_cast<float>(kJuliaPanelWidth), static_cast<float>(kJuliaPanelHeight)},
+			{trackX, panelY + 42.0f, trackWidth, static_cast<float>(kJuliaTrackHeight)},
+			{trackX, panelY + 70.0f, trackWidth, static_cast<float>(kJuliaTrackHeight)},
+		};
+	}
+
+	void drawJuliaSlider(const Font& font, const Rectangle& track, const char* label, double value, bool active) {
+		const double t = std::clamp((value - kJuliaMin) / (kJuliaMax - kJuliaMin), 0.0, 1.0);
+		const float handleX = track.x + static_cast<float>(t) * track.width;
+		const float handleY = track.y + track.height * 0.5f;
+
+		drawUiText(font, label, static_cast<int>(track.x) - 38, static_cast<int>(track.y) - 6, kHudFontSize, RAYWHITE);
+		DrawRectangleRec(track, Fade(RAYWHITE, 0.22f));
+		DrawRectangle(static_cast<int>(track.x), static_cast<int>(track.y), static_cast<int>(handleX - track.x),
+					  static_cast<int>(track.height), Fade(RAYWHITE, 0.55f));
+		DrawCircle(static_cast<int>(handleX), static_cast<int>(handleY), active ? 8.0f : 6.0f,
+				   active ? ORANGE : RAYWHITE);
+		DrawTextEx(font, TextFormat("%.3f", value), Vector2{track.x + track.width + 12.0f, track.y - 6.0f},
+				   static_cast<float>(kHudFontSize), kTextSpacing, Fade(RAYWHITE, 0.8f));
+	}
+
+	void drawJuliaPanel(const Font& font, int width, int height, const JuliaControls& controls) {
+		const JuliaLayout layout = juliaLayout(width, height);
+		DrawRectangleRec(layout.panel, Fade(BLACK, 0.55f));
+		drawUiText(font, "Julia c", static_cast<int>(layout.panel.x) + 14, static_cast<int>(layout.panel.y) + 12,
+				   kHudFontSize, Fade(RAYWHITE, 0.55f));
+		drawJuliaSlider(font, layout.realTrack, "Re", controls.real, controls.activeSlider == 0);
+		drawJuliaSlider(font, layout.imagTrack, "Im", controls.imag, controls.activeSlider == 1);
+	}
 } // namespace
 
 FractalRender::FractalRender(int width, int height, const char* title) {
@@ -173,7 +220,7 @@ void FractalRender::draw(const std::vector<double>& data, const ColorMap& colorm
 }
 
 void FractalRender::display(const std::string& info, const std::string& details, const std::string& notice,
-							const std::string& status, bool showHelp) const {
+							const std::string& status, bool showHelp, const JuliaControls& juliaControls) const {
 	BeginDrawing();
 	ClearBackground(BLACK);
 
@@ -184,7 +231,7 @@ void FractalRender::display(const std::string& info, const std::string& details,
 
 	DrawRectangle(0, 0, width, kTopBarHeight, Fade(BLACK, 0.55f));
 	const UiText& text = uiText(language);
-	drawUiText(font, text.appTitle, 24, 14, kTitleFontSize, RAYWHITE);
+	drawUiText(font, fractalTitle(fractalType, language), 24, 14, kTitleFontSize, RAYWHITE);
 
 	// Строки, которые не помещаются в узкое окно, не рисуем,
 	// иначе они вылезают за край или накладываются на счётчик FPS
@@ -229,10 +276,44 @@ void FractalRender::display(const std::string& info, const std::string& details,
 		}
 	}
 
+	if (juliaControls.visible)
+		drawJuliaPanel(font, width, height, juliaControls);
+
 	EndDrawing();
 }
 
 void FractalRender::setLanguage(Language language) {
 	this->language = language;
-	SetWindowTitle(uiText(language).windowTitle);
+	SetWindowTitle(fractalTitle(fractalType, language));
+}
+
+void FractalRender::setFractalType(FractalType type) {
+	fractalType = type;
+	SetWindowTitle(fractalTitle(fractalType, language));
+}
+
+int FractalRender::juliaSliderAt(float x, float y) const {
+	const JuliaLayout layout = juliaLayout(width, height);
+	const auto hits = [x, y](const Rectangle& track) {
+		return x >= track.x - 8.0f && x <= track.x + track.width + 8.0f && y >= track.y - 12.0f &&
+			   y <= track.y + track.height + 12.0f;
+	};
+
+	if (hits(layout.realTrack))
+		return 0;
+	if (hits(layout.imagTrack))
+		return 1;
+	return -1;
+}
+
+bool FractalRender::juliaPanelAt(float x, float y) const {
+	const JuliaLayout layout = juliaLayout(width, height);
+	return CheckCollisionPointRec(Vector2{x, y}, layout.panel);
+}
+
+double FractalRender::juliaSliderValue(int slider, float x) const {
+	const JuliaLayout layout = juliaLayout(width, height);
+	const Rectangle& track = slider == 0 ? layout.realTrack : layout.imagTrack;
+	const double t = std::clamp((static_cast<double>(x) - track.x) / track.width, 0.0, 1.0);
+	return kJuliaMin + t * (kJuliaMax - kJuliaMin);
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "FractalType.h"
 #include "Localization.h"
 
 #include <filesystem>
@@ -12,6 +13,7 @@ struct Settings {
 	std::string palette = "Ember";
 	// Метка пресета PNG, по умолчанию совпадает с FHD
 	std::string exportPreset = "FHD";
+	FractalParams fractal;
 };
 
 // Возвращает путь к файлу настроек пользователя.

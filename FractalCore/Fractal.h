@@ -1,17 +1,22 @@
 #pragma once
 
+#include "FractalType.h"
+
 #include <stop_token>
 #include <vector>
 
-// Вычисляет множество Мандельброта для заданного окна комплексной плоскости.
+// Вычисляет выбранный фрактал для заданного окна комплексной плоскости.
 class Fractal {
   private:
 	int maxIterations = 0;
+	FractalParams params;
 
   public:
 	explicit Fractal(int maxIterations);
+	Fractal(int maxIterations, const FractalParams& params);
 
-	// Сглаженное число итераций для точки c = real + i*imag.
+	// Сглаженное число итераций для точки real + i*imag.
+	// У Мандельброта это параметр c при z0 = 0, у Julia это z0 при постоянном c из params.
 	// Если точка так и не вышла за предел |z| = 2, возвращает maxIterations.
 	double compute(double real, double imag) const;
 

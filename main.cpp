@@ -1,6 +1,7 @@
 #include "ColorMap.h"
 #include "ExportPresets.h"
 #include "FractalRender.h"
+#include "FractalType.h"
 #include "ImageExportWorker.h"
 #include "ImageRender.h"
 #include "Iterations.h"
@@ -29,6 +30,7 @@
 namespace {
 	constexpr int kWindowWidth = 1200;
 	constexpr int kWindowHeight = 800;
+	constexpr double kJuliaHomeSpan = 4.0;
 
 	constexpr double kIterationRepeatDelay = 0.15;
 
@@ -75,6 +77,13 @@ namespace {
 		std::snprintf(buffer, sizeof(buffer), wideWindow ? text.detailsFormat : text.detailsNarrowFormat,
 					  view.getCenterX(), view.getCenterY(), cursor.real, cursor.imag);
 		return buffer;
+	}
+
+	// Домашний вид зависит от фрактала: Julia симметричен относительно нуля
+	View homeView(FractalType type, int width, int height) {
+		if (type == FractalType::Julia)
+			return View(0.0, 0.0, kJuliaHomeSpan, width, height);
+		return View(width, height);
 	}
 
 	void setWindowIcon() {
@@ -135,6 +144,7 @@ namespace {
 					"      --center <re> <im>    view center (default -0.6 0)\n"
 					"      --span <value>        view width in complex units (default 3.5)\n"
 					"      --palette <name>      Ember, Ocean or Mono (default Ember)\n"
+					"      --fractal <name>      mandelbrot or julia (default mandelbrot)\n"
 					"  -h, --help                show this help\n",
 					program);
 	}
@@ -202,6 +212,13 @@ namespace {
 				continue;
 			}
 
+			if (arg == "--fractal") {
+				if (i + 1 >= argc || !parseFractalType(argv[i + 1], options.settings.fractal.type))
+					return false;
+				++i;
+				continue;
+			}
+
 			return false;
 		}
 
@@ -212,14 +229,16 @@ namespace {
 		const std::filesystem::path settingsFile = settingsPath();
 		Settings settings = loadSettings(settingsFile);
 		Language language = settings.language;
-		FractalRender renderer(kWindowWidth, kWindowHeight, uiText(language).windowTitle);
+		FractalParams fractal = settings.fractal;
+		FractalRender renderer(kWindowWidth, kWindowHeight, fractalTitle(fractal.type, language));
 		renderer.setLanguage(language);
+		renderer.setFractalType(fractal.type);
 		const UiText* ui = &uiText(language);
 		ColorMap colormap;
 		colormap.setPalette(settings.palette);
 		settings.palette = colormap.paletteName();
 		setWindowIcon();
-		View view(renderer.getWidth(), renderer.getHeight());
+		View view = homeView(fractal.type, renderer.getWidth(), renderer.getHeight());
 		const unsigned int hardwareThreads = std::max(1u, std::thread::hardware_concurrency());
 		const int totalThreads = std::max(2, static_cast<int>(hardwareThreads) - 1);
 		const int exportThreads = std::max(1, totalThreads / 4);
@@ -232,6 +251,8 @@ namespace {
 		std::uint64_t lastFullRequestId = 0;
 
 		bool showHelp = true;
+		int activeJuliaSlider = -1;
+		bool suppressPan = false;
 		int iterationBonus = 0;
 		int maxIter = iterationsForView(view.getSpan(), iterationBonus);
 		double renderMs = 0.0;
@@ -258,6 +279,7 @@ namespace {
 		auto submitRender = [&](int renderWidth, int renderHeight, bool full) {
 			RenderRequest request;
 			request.id = nextRequestId++;
+			request.fractal = fractal;
 			request.width = renderWidth;
 			request.height = renderHeight;
 			request.maxIterations = iterationsForView(view.getSpan(), iterationBonus);
@@ -292,6 +314,15 @@ namespace {
 			lastInputTime = GetTime();
 		};
 
+		auto applyJuliaSlider = [&](int slider, float x) {
+			const double value = renderer.juliaSliderValue(slider, x);
+			double& target = slider == 0 ? fractal.juliaReal : fractal.juliaImag;
+			if (value != target) {
+				target = value;
+				requestPreview();
+			}
+		};
+
 		auto requestPresetExport = [&]() {
 			if (saveRequestId != 0) {
 				notice = ui->saveInProgress;
@@ -304,6 +335,7 @@ namespace {
 
 			ImageExportRequest request;
 			request.id = nextRequestId++;
+			request.fractal = fractal;
 			request.width = preset.width;
 			request.height = preset.height;
 			// Итерации считаем по экранному span: экспорт шире окна, и от exportSpan
@@ -341,7 +373,35 @@ namespace {
 
 			const Vector2 mouse = GetMousePosition();
 
-			if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+			// Ползунки c показываются только у Julia
+			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+				suppressPan = fractal.type == FractalType::Julia && renderer.juliaPanelAt(mouse.x, mouse.y);
+				if (fractal.type == FractalType::Julia) {
+					const int slider = renderer.juliaSliderAt(mouse.x, mouse.y);
+					if (slider >= 0) {
+						activeJuliaSlider = slider;
+						applyJuliaSlider(slider, mouse.x);
+					}
+				}
+			}
+
+			if (activeJuliaSlider >= 0) {
+				if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+					applyJuliaSlider(activeJuliaSlider, mouse.x);
+				} else {
+					// Кнопку отпустили или окно потеряло фокус
+					activeJuliaSlider = -1;
+					settings.fractal = fractal;
+					if (!saveSettings(settings, settingsFile))
+						TraceLog(LOG_WARNING, "Could not save settings: %s", settingsFile.string().c_str());
+					requestFull();
+				}
+			}
+
+			if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
+				suppressPan = false;
+
+			if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && activeJuliaSlider < 0 && !suppressPan) {
 				const Vector2 delta = GetMouseDelta();
 				if (delta.x != 0.0f || delta.y != 0.0f) {
 					view.panBy(delta.x, delta.y);
@@ -473,7 +533,7 @@ namespace {
 			}
 
 			if (IsKeyPressed(KEY_R)) {
-				const View home(view.getWidth(), view.getHeight());
+				const View home = homeView(fractal.type, view.getWidth(), view.getHeight());
 				const bool atHome = sameView(view, home) && iterationBonus == 0;
 				const bool homeRequested = hasRequest && sameView(lastRequestedView, home) && lastRequestedBonus == 0;
 				if (!atHome || !homeRequested) {
@@ -485,6 +545,17 @@ namespace {
 
 			if (IsKeyPressed(KEY_H)) {
 				showHelp = !showHelp;
+			}
+
+			if (IsKeyPressed(KEY_T)) {
+				activeJuliaSlider = -1;
+				suppressPan = false;
+				fractal.type = nextFractalType(fractal.type);
+				renderer.setFractalType(fractal.type);
+				settings.fractal = fractal;
+				if (!saveSettings(settings, settingsFile))
+					TraceLog(LOG_WARNING, "Could not save settings: %s", settingsFile.string().c_str());
+				requestFull();
 			}
 
 			if (IsKeyPressed(KEY_L)) {
@@ -558,8 +629,18 @@ namespace {
 			if (!notice.empty() && GetTime() - noticeTime < 3.0) {
 				visibleNotice = notice;
 			}
-			renderer.display(info, details, visibleNotice, status, showHelp);
+
+			// На узком окне панель подсказок перекрыла бы ползунки Julia
+			const bool showHelpNow = showHelp && (fractal.type != FractalType::Julia || view.getWidth() >= 800);
+			const JuliaControls juliaControls{fractal.type == FractalType::Julia, fractal.juliaReal, fractal.juliaImag,
+											  activeJuliaSlider};
+			renderer.display(info, details, visibleNotice, status, showHelpNow, juliaControls);
 		}
+
+		// Сохраняем и на выходе: c мог измениться, но кнопку мыши ещё не отпустили
+		settings.fractal = fractal;
+		if (!saveSettings(settings, settingsFile))
+			TraceLog(LOG_WARNING, "Could not save settings: %s", settingsFile.string().c_str());
 
 		return 0;
 	}
@@ -602,8 +683,8 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
-	std::printf("Rendering %dx%d, %d iterations, palette %s...\n", options.settings.width, options.settings.height,
-				options.settings.maxIterations, colormap.paletteName());
+	std::printf("Rendering %dx%d, %d iterations, %s, palette %s...\n", options.settings.width, options.settings.height,
+				options.settings.maxIterations, fractalTypeName(options.settings.fractal.type), colormap.paletteName());
 	std::fflush(stdout);
 
 	if (!saveFractalImage(options.output, options.settings, colormap)) {

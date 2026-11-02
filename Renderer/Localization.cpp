@@ -4,8 +4,6 @@
 
 namespace {
 	constexpr UiText kRussianText = {
-		"Генерация множества Мандельброта",
-		"ФРАКТАЛ МАНДЕЛЬБРОТА",
 		"УПРАВЛЕНИЕ",
 		"масштаб %.3gx   |   итераций %d   |   %s   | рендер %.1f мс   |   PNG %s",
 		"центр (%.15g, %+.15gi)   |   курсор (%.15g, %+.15gi)",
@@ -24,8 +22,6 @@ namespace {
 	};
 
 	constexpr UiText kEnglishText = {
-		"Mandelbrot Fractal Generation",
-		"MANDELBROT FRACTAL",
 		"CONTROLS",
 		"zoom %.3gx   |   iterations %d   |   %s   |   render %.1f ms   |   PNG %s",
 		"center (%.15g, %+.15gi)   |   cursor (%.15g, %+.15gi)",
@@ -51,6 +47,7 @@ namespace {
 		{"C / V", "копировать / вставить"},
 		{"F2", "сохранить PNG"},
 		{"Shift + влево / вправо", "размер PNG"},
+		{"T", "тип фрактала"},
 		{"R", "сброс вида"},
 		{"L", "локализация"},
 		{"H", "справка"},
@@ -65,6 +62,7 @@ namespace {
 		{"C / V", "copy / paste"},
 		{"F2", "save PNG"},
 		{"Shift + Left / Right", "PNG size"},
+		{"T", "fractal type"},
 		{"R", "reset view"},
 		{"L", "language"},
 		{"H", "help"},
@@ -85,4 +83,11 @@ const UiText& uiText(Language language) {
 
 const HelpLineText* helpLines(Language language) {
 	return language == Language::Russian ? kRussianHelp : kEnglishHelp;
+}
+
+const char* fractalTitle(FractalType type, Language language) {
+	if (language == Language::Russian)
+		return type == FractalType::Julia ? "Множество Жюлиа" : "Множество Мандельброта";
+
+	return type == FractalType::Julia ? "Julia Set" : "Mandelbrot Set";
 }

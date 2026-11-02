@@ -9,7 +9,8 @@ bool isValidRenderSettings(const RenderSettings& settings) {
 	return settings.width > 0 && settings.width <= kMaxImageDimension && settings.height > 0 &&
 		   settings.height <= kMaxImageDimension && settings.maxIterations > 0 && settings.maxIterations <= 100000 &&
 		   settings.span > 0.0 && std::isfinite(settings.span) && std::isfinite(settings.centerX) &&
-		   std::isfinite(settings.centerY);
+		   std::isfinite(settings.centerY) && std::isfinite(settings.fractal.juliaReal) &&
+		   std::isfinite(settings.fractal.juliaImag);
 }
 
 bool saveIterationImage(const std::string& path, const std::vector<double>& data, int width, int height,
@@ -47,7 +48,7 @@ bool saveFractalImage(const std::string& path, const RenderSettings& settings, c
 	// В headless-режиме не нужны служебные INFO-сообщения raylib
 	SetTraceLogLevel(LOG_WARNING);
 
-	const Fractal fractal(settings.maxIterations);
+	const Fractal fractal(settings.maxIterations, settings.fractal);
 	const std::vector<double> data =
 		fractal.generate(settings.width, settings.height, settings.centerX, settings.centerY, settings.span);
 	if (data.empty())

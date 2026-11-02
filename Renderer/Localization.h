@@ -1,5 +1,7 @@
 #pragma once
 
+#include "FractalType.h"
+
 // Язык интерфейса.
 enum class Language {
 	Russian,
@@ -8,8 +10,6 @@ enum class Language {
 
 // Фиксированные строки интерфейса. Форматные строки рассчитаны на snprintf.
 struct UiText {
-	const char* windowTitle;
-	const char* appTitle;
 	const char* controlsHeader;
 	const char* infoFormat;
 	const char* detailsFormat;
@@ -33,7 +33,10 @@ struct HelpLineText {
 	const char* action;
 };
 
-inline constexpr int kHelpLineCount = 11;
+inline constexpr int kHelpLineCount = 12;
+
+// Возвращает название фрактала для заголовка окна и HUD.
+const char* fractalTitle(FractalType type, Language language);
 
 // Возвращает противоположный язык.
 Language nextLanguage(Language language);

@@ -56,6 +56,7 @@ endfunction()
 add_executable(MandelbrotFractalGeneration
         main.cpp
         FractalCore/Fractal.cpp
+        FractalCore/FractalType.cpp
         FractalCore/Iterations.cpp
         FractalCore/View.cpp
         FractalCore/ViewSnapshot.cpp
@@ -112,6 +113,7 @@ if(BUILD_TESTING)
 
     add_executable(mandelbrot_tests
             tests/fractal_test.cpp
+            tests/fractal_type_test.cpp
             tests/color_map_test.cpp
             tests/export_presets_test.cpp
             tests/image_render_test.cpp
@@ -121,6 +123,7 @@ if(BUILD_TESTING)
             tests/view_test.cpp
             tests/view_snapshot_test.cpp
             FractalCore/Fractal.cpp
+            FractalCore/FractalType.cpp
             FractalCore/Iterations.cpp
             FractalCore/View.cpp
             FractalCore/ViewSnapshot.cpp

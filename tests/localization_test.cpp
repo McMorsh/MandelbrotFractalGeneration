@@ -15,10 +15,17 @@ namespace {
 		const UiText& russian = uiText(Language::Russian);
 		const UiText& english = uiText(Language::English);
 
-		EXPECT_STRNE(russian.windowTitle, english.windowTitle);
-		EXPECT_STRNE(russian.appTitle, english.appTitle);
 		EXPECT_STRNE(russian.copied, english.copied);
 		EXPECT_STRNE(russian.statusRendering, english.statusRendering);
+	}
+
+	TEST(LocalizationTest, FractalTitlesAreLocalized) {
+		EXPECT_STRNE(fractalTitle(FractalType::Mandelbrot, Language::Russian),
+					 fractalTitle(FractalType::Mandelbrot, Language::English));
+		EXPECT_STRNE(fractalTitle(FractalType::Julia, Language::Russian),
+					 fractalTitle(FractalType::Julia, Language::English));
+		EXPECT_STRNE(fractalTitle(FractalType::Mandelbrot, Language::Russian),
+					 fractalTitle(FractalType::Julia, Language::Russian));
 	}
 
 	TEST(LocalizationTest, HelpLinesAreComplete) {
@@ -39,6 +46,18 @@ namespace {
 		bool found = false;
 		for (int i = 0; i < kHelpLineCount; ++i) {
 			if (std::string(lines[i].keys) == "L")
+				found = true;
+		}
+
+		EXPECT_TRUE(found);
+	}
+
+	TEST(LocalizationTest, FractalSwitchIsListedInHelp) {
+		const HelpLineText* lines = helpLines(Language::Russian);
+
+		bool found = false;
+		for (int i = 0; i < kHelpLineCount; ++i) {
+			if (std::string(lines[i].keys) == "T")
 				found = true;
 		}
 
