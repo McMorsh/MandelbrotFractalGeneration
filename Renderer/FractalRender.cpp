@@ -143,13 +143,14 @@ namespace {
 				   static_cast<float>(kHudFontSize), kTextSpacing, Fade(RAYWHITE, 0.8f));
 	}
 
-	void drawJuliaPanel(const Font& font, int width, int height, const JuliaControls& controls) {
+	void drawJuliaPanel(const Font& font, int width, int height, const JuliaControls& controls,
+						const FractalParams& fractal) {
 		const JuliaLayout layout = juliaLayout(width, height);
 		DrawRectangleRec(layout.panel, Fade(BLACK, 0.55f));
 		drawUiText(font, "Julia c", static_cast<int>(layout.panel.x) + 14, static_cast<int>(layout.panel.y) + 12,
 				   kHudFontSize, Fade(RAYWHITE, 0.55f));
-		drawJuliaSlider(font, layout.realTrack, "Re", controls.real, controls.activeSlider == 0);
-		drawJuliaSlider(font, layout.imagTrack, "Im", controls.imag, controls.activeSlider == 1);
+		drawJuliaSlider(font, layout.realTrack, "Re", fractal.juliaReal, controls.activeSlider == 0);
+		drawJuliaSlider(font, layout.imagTrack, "Im", fractal.juliaImag, controls.activeSlider == 1);
 	}
 } // namespace
 
@@ -219,7 +220,8 @@ void FractalRender::draw(const std::vector<double>& data, const ColorMap& colorm
 }
 
 void FractalRender::display(const std::string& info, const std::string& details, const std::string& notice,
-							const std::string& status, bool showHelp, const JuliaControls& juliaControls) const {
+							const std::string& status, bool showHelp, const JuliaControls& juliaControls,
+							const FractalParams& fractal) const {
 	BeginDrawing();
 	ClearBackground(BLACK);
 
@@ -275,7 +277,7 @@ void FractalRender::display(const std::string& info, const std::string& details,
 	}
 
 	if (juliaControls.visible)
-		drawJuliaPanel(font, width, height, juliaControls);
+		drawJuliaPanel(font, width, height, juliaControls, fractal);
 
 	EndDrawing();
 }

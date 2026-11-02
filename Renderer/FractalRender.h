@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ColorMap.h"
+#include "FractalType.h"
 #include "Localization.h"
 #include <raylib.h>
 #include <string>
@@ -9,8 +10,6 @@
 /// Состояние панели с ползунками параметра c для Julia.
 struct JuliaControls {
 	bool visible = false;
-	double real = 0.0;
-	double imag = 0.0;
 	/// -1: нет, 0: Re, 1: Im.
 	int activeSlider = -1;
 };
@@ -60,7 +59,8 @@ class FractalRender {
 	/// @param showHelp включает панель подсказок
 	/// @param juliaControls ползунки параметра c
 	void display(const std::string& info, const std::string& details, const std::string& notice,
-				 const std::string& status, bool showHelp, const JuliaControls& juliaControls) const;
+				 const std::string& status, bool showHelp, const JuliaControls& juliaControls,
+				 const FractalParams& fractal) const;
 
 	/// Индекс ползунка c под точкой.
 	/// @return 0 для Re, 1 для Im, -1 если попадания нет.

@@ -534,9 +534,8 @@ void Application::drawFrame() {
 
 	// На узком окне панель подсказок перекрыла бы ползунки Julia
 	const bool showHelpNow = uiState.showHelp && (fractal.type != FractalType::Julia || view.getWidth() >= 800);
-	const JuliaControls juliaControls{fractal.type == FractalType::Julia, fractal.juliaReal, fractal.juliaImag,
-									  uiState.activeJuliaSlider};
-	renderer.display(info, details, visibleNotice, status, showHelpNow, juliaControls);
+	const JuliaControls juliaControls{fractal.type == FractalType::Julia, uiState.activeJuliaSlider};
+	renderer.display(info, details, visibleNotice, status, showHelpNow, juliaControls, fractal);
 }
 
 std::string Application::buildInfo() const {
