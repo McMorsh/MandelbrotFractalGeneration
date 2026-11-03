@@ -1,25 +1,26 @@
-#include "Application.h"
-#include "CommandLine.h"
-#include "Headless.h"
-
 #include <cstdio>
 
+#include "application.hpp"
+#include "command_line.hpp"
+#include "headless.hpp"
+
 int main(int argc, char** argv) {
-	Options options;
-	if (!parseArguments(argc, argv, options)) {
-		std::fprintf(stderr, "Invalid arguments.\n");
-		printUsage(argv[0]);
-		return 1;
-	}
+  Options options;
+  if (!ParseArguments(argc, argv, options)) {
+    std::fprintf(stderr, "Invalid arguments.\n");
+    PrintUsage(argv[0]);
+    return 1;
+  }
 
-	if (options.showHelp) {
-		printUsage(argv[0]);
-		return 0;
-	}
+  if (options.show_help) {
+    PrintUsage(argv[0]);
+    return 0;
+  }
 
-	if (options.headless)
-		return runHeadless(options);
+  if (options.headless) {
+    return RunHeadless(options);
+  }
 
-	Application app;
-	return app.run();
+  Application app;
+  return app.Run();
 }

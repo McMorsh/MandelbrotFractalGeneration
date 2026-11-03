@@ -55,27 +55,27 @@ endfunction()
 
 add_executable(FractalGeneration
         main.cpp
-        App/Application.cpp
-        App/CommandLine.cpp
-        App/Headless.cpp
-        FractalCore/Fractal.cpp
-        FractalCore/FractalType.cpp
-        FractalCore/Iterations.cpp
-        FractalCore/View.cpp
-        FractalCore/ViewSnapshot.cpp
-        Renderer/FractalRender.cpp
-        Renderer/ImageExportWorker.cpp
-        Renderer/ImageRender.cpp
-        Renderer/Localization.cpp
-        Renderer/RenderWorker.cpp
-        Renderer/Settings.cpp
-        ColorMap/ColorMap.cpp)
+        app/application.cpp
+        app/command_line.cpp
+        app/headless.cpp
+        fractal_core/fractal.cpp
+        fractal_core/fractal_type.cpp
+        fractal_core/iterations.cpp
+        fractal_core/view.cpp
+        fractal_core/view_snapshot.cpp
+        renderer/fractal_render.cpp
+        renderer/image_export_worker.cpp
+        renderer/image_render.cpp
+        renderer/localization.cpp
+        renderer/render_worker.cpp
+        renderer/settings.cpp
+        color_map/color_map.cpp)
 
 target_include_directories(FractalGeneration PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/App
-        ${CMAKE_CURRENT_SOURCE_DIR}/FractalCore
-        ${CMAKE_CURRENT_SOURCE_DIR}/ColorMap
-        ${CMAKE_CURRENT_SOURCE_DIR}/Renderer)
+        ${CMAKE_CURRENT_SOURCE_DIR}/app
+        ${CMAKE_CURRENT_SOURCE_DIR}/fractal_core
+        ${CMAKE_CURRENT_SOURCE_DIR}/color_map
+        ${CMAKE_CURRENT_SOURCE_DIR}/renderer)
 
 target_link_libraries(FractalGeneration PRIVATE
         raylib
@@ -127,22 +127,22 @@ if(BUILD_TESTING)
             tests/settings_test.cpp
             tests/view_test.cpp
             tests/view_snapshot_test.cpp
-            FractalCore/Fractal.cpp
-            FractalCore/FractalType.cpp
-            FractalCore/Iterations.cpp
-            FractalCore/View.cpp
-            FractalCore/ViewSnapshot.cpp
-            ColorMap/ColorMap.cpp
-            App/CommandLine.cpp
-            Renderer/ImageRender.cpp
-            Renderer/Localization.cpp
-            Renderer/Settings.cpp)
+            fractal_core/fractal.cpp
+            fractal_core/fractal_type.cpp
+            fractal_core/iterations.cpp
+            fractal_core/view.cpp
+            fractal_core/view_snapshot.cpp
+            color_map/color_map.cpp
+            app/command_line.cpp
+            renderer/image_render.cpp
+            renderer/localization.cpp
+            renderer/settings.cpp)
 
     target_include_directories(fractal_tests PRIVATE
-            ${CMAKE_CURRENT_SOURCE_DIR}/App
-            ${CMAKE_CURRENT_SOURCE_DIR}/FractalCore
-            ${CMAKE_CURRENT_SOURCE_DIR}/ColorMap
-            ${CMAKE_CURRENT_SOURCE_DIR}/Renderer)
+            ${CMAKE_CURRENT_SOURCE_DIR}/app
+            ${CMAKE_CURRENT_SOURCE_DIR}/fractal_core
+            ${CMAKE_CURRENT_SOURCE_DIR}/color_map
+            ${CMAKE_CURRENT_SOURCE_DIR}/renderer)
 
     target_link_libraries(fractal_tests PRIVATE
             GTest::gtest_main

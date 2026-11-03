@@ -1,71 +1,74 @@
-#include "Localization.h"
+#include <string>
 
 #include <gtest/gtest.h>
 
-#include <string>
+#include "fractal_type.hpp"
+#include "localization.hpp"
 
 namespace {
 
-	TEST(LocalizationTest, NextLanguageToggles) {
-		EXPECT_EQ(nextLanguage(Language::Russian), Language::English);
-		EXPECT_EQ(nextLanguage(Language::English), Language::Russian);
-	}
+TEST(LocalizationTest, NextLanguageToggles) {
+  EXPECT_EQ(GetNextLanguage(Language::kRussian), Language::kEnglish);
+  EXPECT_EQ(GetNextLanguage(Language::kEnglish), Language::kRussian);
+}
 
-	TEST(LocalizationTest, LanguagesHaveDifferentText) {
-		const UiText& russian = uiText(Language::Russian);
-		const UiText& english = uiText(Language::English);
+TEST(LocalizationTest, LanguagesHaveDifferentText) {
+  const UiText& russian = GetUiText(Language::kRussian);
+  const UiText& english = GetUiText(Language::kEnglish);
 
-		EXPECT_STRNE(russian.copied, english.copied);
-		EXPECT_STRNE(russian.statusRendering, english.statusRendering);
-	}
+  EXPECT_STRNE(russian.copied, english.copied);
+  EXPECT_STRNE(russian.status_rendering, english.status_rendering);
+}
 
-	TEST(LocalizationTest, FractalTitlesAreLocalized) {
-		EXPECT_STRNE(fractalTitle(FractalType::Mandelbrot, Language::Russian),
-					 fractalTitle(FractalType::Mandelbrot, Language::English));
-		EXPECT_STRNE(fractalTitle(FractalType::Julia, Language::Russian),
-					 fractalTitle(FractalType::Julia, Language::English));
-		EXPECT_STRNE(fractalTitle(FractalType::Mandelbrot, Language::Russian),
-					 fractalTitle(FractalType::Julia, Language::Russian));
-		EXPECT_STRNE(fractalTitle(FractalType::BurningShip, Language::Russian),
-					 fractalTitle(FractalType::BurningShip, Language::English));
-		EXPECT_STRNE(fractalTitle(FractalType::Mandelbrot, Language::Russian),
-					 fractalTitle(FractalType::BurningShip, Language::Russian));
-	}
+TEST(LocalizationTest, FractalTitlesAreLocalized) {
+  EXPECT_STRNE(GetFractalTitle(FractalType::kMandelbrot, Language::kRussian),
+               GetFractalTitle(FractalType::kMandelbrot, Language::kEnglish));
+  EXPECT_STRNE(GetFractalTitle(FractalType::kJulia, Language::kRussian),
+               GetFractalTitle(FractalType::kJulia, Language::kEnglish));
+  EXPECT_STRNE(GetFractalTitle(FractalType::kMandelbrot, Language::kRussian),
+               GetFractalTitle(FractalType::kJulia, Language::kRussian));
+  EXPECT_STRNE(GetFractalTitle(FractalType::kBurningShip, Language::kRussian),
+               GetFractalTitle(FractalType::kBurningShip, Language::kEnglish));
+  EXPECT_STRNE(GetFractalTitle(FractalType::kMandelbrot, Language::kRussian),
+               GetFractalTitle(FractalType::kBurningShip, Language::kRussian));
+}
 
-	TEST(LocalizationTest, HelpLinesAreComplete) {
-		for (const Language language : {Language::Russian, Language::English}) {
-			const HelpLineText* lines = helpLines(language);
-			ASSERT_NE(lines, nullptr);
+TEST(LocalizationTest, HelpLinesAreComplete) {
+  for (const Language language : {Language::kRussian, Language::kEnglish}) {
+    const HelpLineText* lines = GetHelpLines(language);
+    ASSERT_NE(lines, nullptr);
 
-			for (int i = 0; i < kHelpLineCount; ++i) {
-				EXPECT_NE(lines[i].keys, nullptr);
-				EXPECT_NE(lines[i].action, nullptr);
-			}
-		}
-	}
+    for (int i = 0; i < kHelpLineCount; ++i) {
+      EXPECT_NE(lines[i].keys, nullptr);
+      EXPECT_NE(lines[i].action, nullptr);
+    }
+  }
+}
 
-	TEST(LocalizationTest, LanguageSwitchIsListedInHelp) {
-		const HelpLineText* lines = helpLines(Language::Russian);
+TEST(LocalizationTest, LanguageSwitchIsListedInHelp) {
+  const HelpLineText* lines = GetHelpLines(Language::kRussian);
 
-		bool found = false;
-		for (int i = 0; i < kHelpLineCount; ++i) {
-			if (std::string(lines[i].keys) == "L")
-				found = true;
-		}
+  bool found = false;
+  for (int i = 0; i < kHelpLineCount; ++i) {
+    if (std::string(lines[i].keys) == "L") {
+      found = true;
+    }
+  }
 
-		EXPECT_TRUE(found);
-	}
+  EXPECT_TRUE(found);
+}
 
-	TEST(LocalizationTest, FractalSwitchIsListedInHelp) {
-		const HelpLineText* lines = helpLines(Language::Russian);
+TEST(LocalizationTest, FractalSwitchIsListedInHelp) {
+  const HelpLineText* lines = GetHelpLines(Language::kRussian);
 
-		bool found = false;
-		for (int i = 0; i < kHelpLineCount; ++i) {
-			if (std::string(lines[i].keys) == "T")
-				found = true;
-		}
+  bool found = false;
+  for (int i = 0; i < kHelpLineCount; ++i) {
+    if (std::string(lines[i].keys) == "T") {
+      found = true;
+    }
+  }
 
-		EXPECT_TRUE(found);
-	}
+  EXPECT_TRUE(found);
+}
 
-} // namespace
+}  // namespace

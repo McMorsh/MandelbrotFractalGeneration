@@ -59,8 +59,8 @@
 с шириной 4.
 
 Выбранный тип и `c` сохраняются между запусками. Смена типа сохраняет текущий
-вид, поэтому после переключения может понадобиться `R`. При ширине окна меньше
-800 px панель подсказок скрывается, чтобы не перекрывать ползунки.
+вид, поэтому после переключения может понадобиться `R`. У Жюлиа при ширине окна
+меньше 800 px панель подсказок скрывается, чтобы не перекрывать ползунки.
 
 ### Экспорт PNG
 
@@ -178,7 +178,7 @@ zₙ₊₁ = zₙ² + c
 μ = n + 1 - log₂(log₂ |zₙ|)
 ```
 
-Точки, не вышедшие за предел за `maxIterations` шагов, считаются внутренними
+Точки, не вышедшие за предел за `max_iterations` шагов, считаются внутренними
 и окрашиваются в чёрный.
 
 ### Палитры
@@ -190,7 +190,7 @@ zₙ₊₁ = zₙ² + c
 | Mono | серая шкала | проверка формы и сглаживания без влияния цвета |
 
 Все палитры замкнуты: последний цвет близок к первому, поэтому при
-зацикливании нет видимого шва. Длина цикла растёт с `maxIterations`, иначе
+зацикливании нет видимого шва. Длина цикла растёт с `max_iterations`, иначе
 на глубоком зуме полосы становятся слишком частыми. Палитра переключается
 по `P` и сохраняется в настройках.
 
@@ -278,23 +278,23 @@ ctest --test-dir build --output-on-failure
 
 | Путь | Назначение |
 | --- | --- |
-| `FractalCore/Fractal.h`, `FractalCore/Fractal.cpp` | Расчёт выбранного фрактала и сглаженных итераций |
-| `FractalCore/FractalType.h`, `FractalCore/FractalType.cpp` | Тип фрактала, параметры Julia и разбор имени |
-| `FractalCore/View.h`, `FractalCore/View.cpp` | Камера: зум, панорамирование и координаты |
-| `FractalCore/Iterations.h`, `FractalCore/Iterations.cpp` | Автоматическое число итераций и ручная подстройка |
-| `FractalCore/ViewSnapshot.h`, `FractalCore/ViewSnapshot.cpp` | Формат и разбор параметров вида для буфера обмена |
-| `ColorMap/ColorMap.h`, `ColorMap/ColorMap.cpp` | Палитры и преобразование итераций в цвет |
-| `App/CommandLine.h`, `App/CommandLine.cpp` | Разбор аргументов командной строки и справка |
-| `App/Headless.h`, `App/Headless.cpp` | Рендер PNG без окна |
-| `App/Application.h`, `App/Application.cpp` | Главный цикл, ввод, предпросмотр и экспорт |
-| `Renderer/ExportPresets.h` | Пресеты разрешения FHD, 2K, 4K и 8K |
-| `Renderer/FractalRender.h`, `Renderer/FractalRender.cpp` | Окно, текстура и экранный интерфейс |
-| `Renderer/ImageRender.h`, `Renderer/ImageRender.cpp` | Рендер и сохранение PNG без окна |
-| `Renderer/RenderSettings.h` | Общие параметры кадра для оконного и headless-рендера |
-| `Renderer/ImageExportWorker.h`, `Renderer/ImageExportWorker.cpp` | Фоновый экспорт PNG в выбранном разрешении |
-| `Renderer/Localization.h`, `Renderer/Localization.cpp` | Строки русского и английского интерфейса |
-| `Renderer/RenderWorker.h`, `Renderer/RenderWorker.cpp` | Фоновый расчёт кадров |
-| `Renderer/Settings.h`, `Renderer/Settings.cpp` | Сохранение и чтение настроек интерфейса |
+| `fractal_core/fractal.hpp`, `fractal_core/fractal.cpp` | Расчёт выбранного фрактала и сглаженных итераций |
+| `fractal_core/fractal_type.hpp`, `fractal_core/fractal_type.cpp` | Тип фрактала, параметры Julia и разбор имени |
+| `fractal_core/view.hpp`, `fractal_core/view.cpp` | Камера: зум, панорамирование и координаты |
+| `fractal_core/iterations.hpp`, `fractal_core/iterations.cpp` | Автоматическое число итераций и ручная подстройка |
+| `fractal_core/view_snapshot.hpp`, `fractal_core/view_snapshot.cpp` | Формат и разбор параметров вида для буфера обмена |
+| `color_map/color_map.hpp`, `color_map/color_map.cpp` | Палитры и преобразование итераций в цвет |
+| `app/command_line.hpp`, `app/command_line.cpp` | Разбор аргументов командной строки и справка |
+| `app/headless.hpp`, `app/headless.cpp` | Рендер PNG без окна |
+| `app/application.hpp`, `app/application.cpp` | Главный цикл, ввод, предпросмотр и экспорт |
+| `renderer/export_presets.hpp` | Пресеты разрешения FHD, 2K, 4K и 8K |
+| `renderer/fractal_render.hpp`, `renderer/fractal_render.cpp` | Окно, текстура и экранный интерфейс |
+| `renderer/image_render.hpp`, `renderer/image_render.cpp` | Рендер и сохранение PNG без окна |
+| `renderer/render_settings.hpp` | Общие параметры кадра для оконного и headless-рендера |
+| `renderer/image_export_worker.hpp`, `renderer/image_export_worker.cpp` | Фоновый экспорт PNG в выбранном разрешении |
+| `renderer/localization.hpp`, `renderer/localization.cpp` | Строки русского и английского интерфейса |
+| `renderer/render_worker.hpp`, `renderer/render_worker.cpp` | Фоновый расчёт кадров |
+| `renderer/settings.hpp`, `renderer/settings.cpp` | Сохранение и чтение настроек интерфейса |
 | `main.cpp` | Точка входа: разбор режима и запуск приложения |
 | `tests/` | Тесты GoogleTest для `CommandLine`, `Fractal`, `FractalType`, `Iterations`, `ColorMap`, `View`, `ViewSnapshot`, `ImageRender`, `ExportPresets`, `Localization` и `Settings` |
 | `assets/` | Иконки, шрифт IBM Plex Mono и текст лицензии OFL |

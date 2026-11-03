@@ -1,51 +1,52 @@
-#include "FractalType.h"
-
 #include <gtest/gtest.h>
+
+#include "fractal_type.hpp"
 
 namespace {
 
-	TEST(FractalTypeTest, DefaultsToMandelbrot) {
-		EXPECT_EQ(FractalParams{}.type, FractalType::Mandelbrot);
-	}
+TEST(FractalTypeTest, DefaultsToMandelbrot) {
+  EXPECT_EQ(FractalParams{}.type, FractalType::kMandelbrot);
+}
 
-	TEST(FractalTypeTest, ParsesKnownNames) {
-		FractalType type = FractalType::Julia;
+TEST(FractalTypeTest, ParsesKnownNames) {
+  FractalType type = FractalType::kJulia;
 
-		ASSERT_TRUE(parseFractalType("mandelbrot", type));
-		EXPECT_EQ(type, FractalType::Mandelbrot);
-		ASSERT_TRUE(parseFractalType("julia", type));
-		EXPECT_EQ(type, FractalType::Julia);
-		ASSERT_TRUE(parseFractalType("burningship", type));
-		EXPECT_EQ(type, FractalType::BurningShip);
-	}
+  ASSERT_TRUE(ParseFractalType("mandelbrot", type));
+  EXPECT_EQ(type, FractalType::kMandelbrot);
+  ASSERT_TRUE(ParseFractalType("julia", type));
+  EXPECT_EQ(type, FractalType::kJulia);
+  ASSERT_TRUE(ParseFractalType("burningship", type));
+  EXPECT_EQ(type, FractalType::kBurningShip);
+}
 
-	TEST(FractalTypeTest, ParsesNamesCaseInsensitive) {
-		FractalType type = FractalType::Mandelbrot;
+TEST(FractalTypeTest, ParsesNamesCaseInsensitive) {
+  FractalType type = FractalType::kMandelbrot;
 
-		ASSERT_TRUE(parseFractalType("JULIA", type));
-		EXPECT_EQ(type, FractalType::Julia);
-		ASSERT_TRUE(parseFractalType("Burning-Ship", type));
-		EXPECT_EQ(type, FractalType::BurningShip);
-	}
+  ASSERT_TRUE(ParseFractalType("JULIA", type));
+  EXPECT_EQ(type, FractalType::kJulia);
+  ASSERT_TRUE(ParseFractalType("Burning-Ship", type));
+  EXPECT_EQ(type, FractalType::kBurningShip);
+}
 
-	TEST(FractalTypeTest, RejectsUnknownName) {
-		FractalType type = FractalType::Mandelbrot;
+TEST(FractalTypeTest, RejectsUnknownName) {
+  FractalType type = FractalType::kMandelbrot;
 
-		EXPECT_FALSE(parseFractalType("unknown", type));
-		EXPECT_FALSE(parseFractalType("", type));
-		EXPECT_EQ(type, FractalType::Mandelbrot);
-	}
+  EXPECT_FALSE(ParseFractalType("unknown", type));
+  EXPECT_FALSE(ParseFractalType("", type));
+  EXPECT_EQ(type, FractalType::kMandelbrot);
+}
 
-	TEST(FractalTypeTest, NextTypeCycles) {
-		EXPECT_EQ(nextFractalType(FractalType::Mandelbrot), FractalType::Julia);
-		EXPECT_EQ(nextFractalType(FractalType::Julia), FractalType::BurningShip);
-		EXPECT_EQ(nextFractalType(FractalType::BurningShip), FractalType::Mandelbrot);
-	}
+TEST(FractalTypeTest, NextTypeCycles) {
+  EXPECT_EQ(GetNextFractalType(FractalType::kMandelbrot), FractalType::kJulia);
+  EXPECT_EQ(GetNextFractalType(FractalType::kJulia), FractalType::kBurningShip);
+  EXPECT_EQ(GetNextFractalType(FractalType::kBurningShip),
+            FractalType::kMandelbrot);
+}
 
-	TEST(FractalTypeTest, NamesMatchCli) {
-		EXPECT_STREQ(fractalTypeName(FractalType::Mandelbrot), "mandelbrot");
-		EXPECT_STREQ(fractalTypeName(FractalType::Julia), "julia");
-		EXPECT_STREQ(fractalTypeName(FractalType::BurningShip), "burningship");
-	}
+TEST(FractalTypeTest, NamesMatchCli) {
+  EXPECT_STREQ(GetFractalTypeName(FractalType::kMandelbrot), "mandelbrot");
+  EXPECT_STREQ(GetFractalTypeName(FractalType::kJulia), "julia");
+  EXPECT_STREQ(GetFractalTypeName(FractalType::kBurningShip), "burningship");
+}
 
-} // namespace
+}  // namespace
