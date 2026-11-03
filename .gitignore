@@ -29,6 +29,8 @@ CMakeUserPresets.json
 # Скриншоты приложения
 /mandelbrot.png
 /mandelbrot_*.png
+/julia_*.png
+/burningship_*.png
 /screenshot*.png
 
 # IDE и система
@@ -47,3 +49,5 @@ Thumbs.db
 # Личные заметки
 /HelpGit.md
 /Plan.md
+.clang-format
+.zed/
